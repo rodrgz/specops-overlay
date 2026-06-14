@@ -1,0 +1,38 @@
+id: java-quarkus
+label: Java / Quarkus
+description: Java and Quarkus backend workflow flavor.
+
+defaults:
+  language: Java
+  framework: Quarkus
+  build_tools:
+    - maven
+    - gradle
+
+docs:
+  - docs/CODING-PATTERNS.md
+  - docs/INTEGRATION-PATTERNS.md
+  - docs/HARDENING-PATTERNS.md
+
+skills:
+  - skills/modular-architecture/SKILL.md
+
+paths:
+  source_roots:
+    - src/main/java
+  test_roots:
+    - src/test/java
+  resource_roots:
+    - src/main/resources
+
+commands:
+  maven:
+    dev: ./mvnw quarkus:dev
+    build: ./mvnw -q package
+    test: ./mvnw -q test
+    verify: ./mvnw -q verify
+  gradle:
+    dev: ./gradlew quarkusDev
+    build: ./gradlew build
+    test: ./gradlew test
+    verify: ./gradlew check
