@@ -19,10 +19,11 @@ State why the current behavior is insufficient.
 
 Summarize observable behavior today. Link to existing specs when available.
 
-## Proposed Change
+## What Changes
 
 Summarize the intended behavior change. Keep this behavior-focused; defer
-implementation details to `design.md`.
+implementation details to `design.md`. This section name is required by
+OpenSpec validation.
 
 ## Capability Deltas
 

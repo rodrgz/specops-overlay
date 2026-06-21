@@ -150,7 +150,14 @@ check_secret_scan() {
     local pattern
     pattern='(sk-[A-Za-z0-9][A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA|OPENSSH|EC|DSA)? ?PRIVATE KEY-----)'
 
-    if git -C "$ROOT" ls-files -z | xargs -0 rg -n --pcre2 "$pattern"; then
+    local existing_files=()
+    local path
+    while IFS= read -r -d '' path; do
+        [[ -e "$ROOT/$path" ]] && existing_files+=("$ROOT/$path")
+    done < <(git -C "$ROOT" ls-files -z)
+
+    if ((${#existing_files[@]} > 0)) &&
+        rg -n --pcre2 "$pattern" "${existing_files[@]}"; then
         fail "Potential secret found in tracked files"
     fi
 
@@ -161,8 +168,25 @@ check_openspec() {
     info "Checking OpenSpec change structure"
 
     if command -v openspec >/dev/null 2>&1; then
-        (cd "$ROOT" && openspec validate improve-specops-overlay)
-        pass "OpenSpec validation passed"
+        local changes=()
+        local proposal
+        local change
+
+        while IFS= read -r -d '' proposal; do
+            change="$(basename "$(dirname "$proposal")")"
+            changes+=("$change")
+        done < <(find "$ROOT/openspec/changes" -mindepth 2 -maxdepth 2 -name proposal.md -print0 | sort -z)
+
+        if ((${#changes[@]} == 0)); then
+            warn "No active OpenSpec changes with proposal.md; skipping structural validation"
+            return
+        fi
+
+        for change in "${changes[@]}"; do
+            (cd "$ROOT" && openspec validate "$change")
+        done
+
+        pass "OpenSpec validation passed (${#changes[@]} change(s))"
     else
         warn "openspec not installed; skipping structural validation"
     fi

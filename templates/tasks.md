@@ -167,7 +167,10 @@ run, migration verification, or final evaluation.
 
 ## Handoff Notes
 
-Use this section for long-running changes only.
+Use this section for long-running changes only. Keep it compact resume context
+inside the OpenSpec change: decisions, blockers, validation results, deferred
+ideas, and archive readiness. Do not use it as a parallel source of truth for
+requirements or project facts.
 
 | Topic | Current State | Next Action |
 | --- | --- | --- |

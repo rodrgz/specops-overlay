@@ -20,15 +20,15 @@ version decide the final files.
 ## Contents
 
 - [What SpecOps Overlay Adds](#what-specops-overlay-adds)
-- [OpenSpec-First Workflow](#openspec-first-workflow)
+- [Complete Overlay Workflow](#complete-overlay-workflow)
 - [Change Sizing](#change-sizing)
 - [Core And Flavors](#core-and-flavors)
-- [Repository Contents](#repository-contents)
-- [How To Adopt SpecOps Overlay](#how-to-adopt-specops-overlay)
-- [Local Validation](#local-validation)
 - [Flavor Strategy](#flavor-strategy)
 - [State And Handoff](#state-and-handoff)
 - [Knowledge Verification](#knowledge-verification)
+- [Repository Contents](#repository-contents)
+- [How To Adopt SpecOps Overlay](#how-to-adopt-specops-overlay)
+- [Local Validation](#local-validation)
 - [OpenSpec Setup](#openspec-setup)
 - [Licensing](#licensing)
 - [Contributing](#contributing)
@@ -60,60 +60,174 @@ that lifecycle:
 | Post-implementation eval | ❌ Basic human review | ✅ `spec-driven-eval` with file/line evidence scores |
 | Stack orientation (Flavors) | ❌ None | ✅ Optional injected guidance (e.g., Java/Quarkus) |
 
-## OpenSpec-First Workflow
+## Complete Overlay Workflow
 
-OpenSpec remains the lifecycle owner. The overlay attaches context, quality
-gates, proof planning, and scored evaluation to the OpenSpec flow:
+OpenSpec remains the lifecycle owner. SpecOps Overlay attaches project context,
+quality gates, proof planning, and scored evaluation to that lifecycle:
 
 ```text
-map -> propose -> specs -> design -> quality-gate -> tasks -> apply -> verify -> eval -> sync/archive
+adopt -> map -> propose -> specs -> design -> quality-gate -> tasks -> apply -> verify -> eval -> sync/archive
+```
+
+### Philosophy: Fluid Actions With Explicit Proof
+
+Native OpenSpec treats commands as actions, not rigid phases. Dependencies show
+what can be created next; they are not meant to trap a team in a planning
+stage. SpecOps Overlay keeps that model, but deliberately adds stricter proof
+gates for teams that want stronger AI-assisted delivery controls.
+
+That tradeoff is intentional:
+
+- Use plain OpenSpec when the team wants a lighter, more fluid artifact flow.
+- Use SpecOps Overlay when the team wants project context, AC-to-proof
+  traceability, hidden-requirement review, task-local validation, and scored
+  post-implementation evidence.
+- Record an opt-out rationale when a default-on overlay gate is skipped.
+
+### Modes
+
+The overlay works with either OpenSpec profile.
+
+| Mode | OpenSpec Commands | Overlay Use |
+| --- | --- | --- |
+| Core quick path | `/opsx:propose`, `/opsx:explore`, `/opsx:apply`, `/opsx:sync`, `/opsx:archive` | Fastest path. Keep overlay proof in the generated proposal/tasks and use `openspec validate <change-id>` as the structural fallback. |
+| Expanded workflow | `/opsx:new`, `/opsx:continue`, `/opsx:ff`, `/opsx:apply`, `/opsx:verify`, `/opsx:sync`, `/opsx:archive`, `/opsx:bulk-archive`, `/opsx:onboard` | Best fit for full SpecOps use. Run `/opsx:verify` before evaluation and archive. |
+
+Enable the expanded workflow with:
+
+```bash
+openspec config profile
+openspec update
+```
+
+### 1. Adopt And Bootstrap
+
+Use this flow once per adopting repository:
+
+```text
+copy overlay -> fill AGENTS.md -> fill docs/project/* -> choose flavor -> openspec init/update -> first change
+```
+
+1. Copy the overlay into the repository root, or run `scripts/adopt.sh`.
+2. Fill `AGENTS.md` with stable project-wide facts.
+3. Fill `docs/project/*` with architecture, stack, structure, conventions,
+   testing, integrations, and concerns.
+4. Select flavor guidance only when the project actually uses that stack.
+5. Run `openspec init` and select the AI tools that should receive generated
+   OpenSpec commands and skills.
+6. Run `openspec config profile` and `openspec update` when the project needs
+   expanded workflow commands.
+
+Do not ask agents to implement product behavior while `AGENTS.md` and
+`docs/project/*` are still placeholders.
+
+### 2. Map Brownfield Repositories
+
+For an existing codebase, run brownfield mapping before feature work:
+
+```text
+inspect code/manifests/scripts/CI -> fill docs/project/* -> record unknowns -> then plan changes
+```
+
+Use `skills/brownfield-mapping/SKILL.md` to fill project docs from observed
+evidence. Keep unknown commands, services, credentials, or architecture
+decisions explicit instead of inventing them. Preserve existing local agent
+rules and merge them into the overlay contract.
+
+### 3. Plan A Change
+
+For behavior changes, create an OpenSpec change under
+`openspec/changes/<change-id>/`:
+
+```text
+proposal.md -> specs/<capability>/spec.md -> design.md -> tasks.md
 ```
 
 Proposal artifacts should use OpenSpec capability deltas. Before naming a
-delta, inspect `openspec/specs/` for existing canonical capabilities. Each
-new, modified, or removed capability maps to
-`openspec/changes/<change-id>/specs/<capability>/spec.md`.
+delta, inspect `openspec/specs/` for existing canonical capability names. Each
+new, modified, or removed capability maps to:
 
-Task artifacts should keep implementation and proof together. Code-changing
-tasks should name the relevant tests, validation gate, done condition, and AC
-mapping, then follow RED/GREEN discipline: create or update the failing test
-when feasible, confirm the failure, and implement the smallest passing change.
-Agents must not skip, delete, weaken, or narrow tests merely to pass a gate.
+```text
+openspec/changes/<change-id>/specs/<capability>/spec.md
+```
 
-Validation gates are declared per task: `quick`, `full`, `build`, `docs`,
-`security`, `OpenSpec verify`, or `evaluation`. Use `docs/project/TESTING.md`
-for the concrete commands after adoption.
+Use `skills/spec-quality-gate/SKILL.md` before implementation when the change
+has explicit ACs or touches persistence, messaging, external integrations,
+security, config, async, scheduled, or webhook behavior. The gate should
+produce a pass or explicitly scoped partial result before implementation.
 
-`skills/spec-quality-gate/SKILL.md` is default-on before implementation when a
-change has explicit ACs or touches persistence, messaging, external
-integrations, security, config, async, scheduled, or webhook behavior. Skipping
-the gate requires a recorded opt-out rationale.
+### 4. Implement With Task-Local Proof
 
-Before archive or merge, run `/opsx:verify` when the expanded OpenSpec profile
-is available, then run `skills/spec-driven-eval/SKILL.md` when ACs are clear
-enough to score. If the repository uses the core profile and `/opsx:verify` is
-unavailable, record that status and run `openspec validate <change-id>` or the
-closest generated OpenSpec structural review. Do not archive until specs are
-synced or explicitly archive-ready, evaluation evidence is recorded, and
-unresolved gaps are named.
+Task artifacts keep implementation and proof together. Each implementation
+task should include:
+
+- `Maps to`: requirement, AC, sanctioned implicit risk, or engineering gate.
+- `Tests`: unit, integration/e2e, documentation proof, or rationale for none.
+- `Gate`: `quick`, `full`, `build`, `docs`, `security`, `OpenSpec verify`, or
+  `evaluation`.
+- `Done when`: observable completion condition.
+
+For code changes, follow RED/GREEN discipline when feasible: create or update
+the smallest failing test, confirm the failure, then implement the smallest
+passing change. Agents must not delete, skip, weaken, or narrow tests merely to
+pass validation.
+
+### 5. Verify, Evaluate, Sync, Archive
+
+Completion uses proof before closure:
+
+```text
+apply -> run task gates -> /opsx:verify or openspec validate -> spec-driven-eval -> sync -> archive
+```
+
+1. Run the validation commands named in `docs/project/TESTING.md`.
+2. Run `/opsx:verify <change-id>` when the expanded profile is available.
+3. If `/opsx:verify` is unavailable, record that status and run
+   `openspec validate <change-id>` or the closest generated structural review.
+4. Run `skills/spec-driven-eval/SKILL.md` when acceptance criteria are clear
+   enough to score.
+5. Sync specs with `/opsx:sync` when delta specs represent implemented
+   behavior.
+6. Archive only after specs are synced or explicitly archive-ready, evaluation
+   evidence is recorded, and unresolved gaps are named.
+
+### Common Patterns
+
+| Situation | Recommended Flow |
+| --- | --- |
+| New repo, no product code yet | Adopt overlay, fill `AGENTS.md`, fill `docs/project/*`, run `openspec init`, then start the first change. |
+| Existing repo with unknown structure | Adopt overlay, run `skills/brownfield-mapping/SKILL.md`, fill project docs from evidence, then plan changes. |
+| Small docs or template update | Create a short change under `openspec/changes/`, map tasks to a docs gate, run targeted checks and `scripts/validate.sh`. |
+| Clear medium feature | `/opsx:propose <change-id>` or `/opsx:new` + `/opsx:ff`, run the quality gate when ACs or risks apply, then `/opsx:apply`. |
+| Risky or AC-heavy behavior | Build proposal/spec/design/tasks deliberately with `/opsx:continue`, run `spec-quality-gate`, implement task-local tests, then verify and evaluate. |
+| Unclear requirement or design direction | Use `/opsx:explore`, then create or update a change once the smallest defensible scope is clear. |
+| Parallel work or urgent interrupt | Keep separate change IDs, finish and archive the interrupt independently, then resume the original change by task ID. |
+
+### Command And Artifact Map
+
+| Need | OpenSpec Action | Overlay Addition |
+| --- | --- | --- |
+| Investigate before committing | `/opsx:explore` | Load only relevant `docs/project/*`; record unknowns. |
+| Start a change quickly | `/opsx:propose` | Ensure capability deltas, risk decision, and validation plan are present. |
+| Step through artifacts | `/opsx:new` + `/opsx:continue` | Add quality-gate, AC-proof, and task-local proof fields as artifacts appear. |
+| Fast-forward clear work | `/opsx:ff` | Review generated tasks for AC/test/gate mapping before implementation. |
+| Implement | `/opsx:apply` | Follow RED/GREEN where feasible and update task checkboxes with proof. |
+| Validate implementation | `/opsx:verify` or `openspec validate <change-id>` | Run `spec-driven-eval` when ACs are scoreable. |
+| Close the change | `/opsx:sync` + `/opsx:archive` | Do not archive until evidence, gaps, and archive readiness are recorded. |
 
 ## Change Sizing
 
-Use the lightest OpenSpec path that still preserves traceability and risk
-control.
+`AGENTS.md` is the canonical source for change sizing rules copied into
+adopting repositories. The README summary is:
 
-| Size | Typical Change | OpenSpec Artifacts | Gates | Validation |
-| --- | --- | --- | --- | --- |
-| Small | Typo, local docs tweak, tiny refactor with no behavior change | Short proposal or task note under `openspec/changes/` when behavior or traceability matters | Quality gate optional unless risk surface applies | `quick` or `docs` |
-| Medium | Single behavior change, template update, one bounded component | Proposal, delta spec when behavior changes, focused tasks | Quality gate for explicit ACs or risky surfaces | Targeted tests plus relevant docs/build gates |
-| Large | Multi-file behavior, persistence, integration, security, or workflow change | Proposal, specs, design, tasks, AC proof matrix | Quality gate default-on | `full`, OpenSpec verify, evaluation |
-| Complex | Cross-module, async, migration, rollout, or high-uncertainty change | Full OpenSpec artifact set plus explicit assumptions and proof matrix | Quality gate required; defer unresolved unknowns | Full documented validation and evaluation |
-
-Small changes can use shorter artifacts, but they must not bypass
-`openspec/changes/`, traceability, sync/archive expectations, or required
-verification. Sizing never weakens the default-on gate for persistence,
-messaging, external integrations, security, config, async, scheduled, webhook,
-or explicit-AC changes.
+- Small changes may use shorter artifacts, but keep traceability under
+  `openspec/changes/` when behavior or proof matters.
+- Medium changes need proposal/spec/task artifacts when behavior changes.
+- Large and complex changes need full proposal, specs, design, tasks, proof
+  planning, OpenSpec verification, and evaluation.
+- Risky surfaces still trigger quality gates regardless of size: explicit ACs,
+  persistence, messaging, external integrations, security, config, async,
+  scheduled, or webhook behavior.
 
 Record "while here" ideas as out of scope or deferred unless they map to an AC,
 sanctioned implicit risk, or engineering gate.
@@ -162,16 +276,12 @@ specs and proposed work still belongs under `openspec/changes/`.
 
 ## Knowledge Verification
 
-For research-heavy design work, verify facts in this order:
-
-1. Local code, manifests, scripts, tests, and CI.
-2. Filled `docs/project/*` reference docs.
-3. Selected flavor docs and skills, when the stack matches.
-4. Official vendor or framework documentation.
-5. Web search only when current external facts are needed.
-
-Record uncertainty explicitly. Do not invent commands, dependencies, APIs,
-environment variables, or architecture decisions.
+`AGENTS.md` is the canonical source for the verification order. Operationally:
+verify local code, manifests, scripts, tests, and CI first; then use filled
+`docs/project/*`; then selected flavor guidance; then official vendor docs;
+then web search only when current external facts are needed. Record uncertainty
+explicitly and do not invent commands, dependencies, APIs, environment
+variables, or architecture decisions.
 
 ## Repository Contents
 
@@ -224,10 +334,10 @@ scripts/validate.sh
 ```
 
 The script checks required internal references, parses shell scripts, runs
-`shellcheck` when installed, performs a generic adoption dry run in `/tmp`,
-checks task/proposal template traceability, scans tracked files for obvious
-secret patterns, and runs `openspec validate improve-specops-overlay` when
-OpenSpec is installed.
+`shellcheck` when installed, performs generic and selected-flavor adoption dry
+runs in `/tmp`, checks task/proposal template traceability, scans existing
+tracked files for obvious secret patterns, and validates active OpenSpec
+changes that contain `proposal.md` when OpenSpec is installed.
 
 CI runs the same script in `.github/workflows/validate.yml`.
 
