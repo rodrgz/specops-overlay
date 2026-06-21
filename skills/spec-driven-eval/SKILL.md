@@ -2,6 +2,7 @@
 name: spec-driven-eval
 description: Scores how completely an implementation fulfills a PRD/spec case by case, with separate implementation and test scores plus a final grade. Invoke when explicitly named or when the user asks to grade, audit, verify, or score an implemented feature against requirements, acceptance criteria, a PRD, an OpenSpec change, or a task checklist. Use after implementation or before archive/merge. Use strict benchmark mode only when the user asks for reproducible framework comparison.
 license: CC-BY-4.0
+adapted_from: tech-leads-club/agent-skills
 metadata:
   version: 1.0.0
 ---

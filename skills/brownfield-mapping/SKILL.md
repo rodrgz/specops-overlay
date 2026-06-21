@@ -2,6 +2,7 @@
 name: brownfield-mapping
 description: Maps an existing repository before adopting SpecOps Overlay or planning work. Use when asked to map/analyze an existing codebase, fill docs/project/* from a real repository, document current architecture, or prepare brownfield OpenSpec context.
 license: CC-BY-4.0
+adapted_from: tech-leads-club/agent-skills
 metadata:
   version: 1.1.0
 ---

@@ -2,6 +2,7 @@
 name: modular-architecture
 description: Guides modular service architecture. Use before creating modules, changing boundaries, introducing facades, repositories, persistence ownership, subdomains, or reviewing modularity. Do not use for simple bug fixes that do not affect structure.
 license: CC-BY-4.0
+adapted_from: tech-leads-club/agent-skills
 metadata:
   version: 1.1.0
 ---

@@ -2,6 +2,7 @@
 name: pr-review
 description: Multi-perspective PR review workflow for software projects. Use only when explicitly asked to review a pull request, code review a PR, or check PR changes. Do not use for implementation, debugging, planning, or general code questions.
 license: CC-BY-4.0
+adapted_from: tech-leads-club/agent-skills
 metadata:
   version: 1.1.0
 ---

@@ -2,6 +2,7 @@
 name: spec-quality-gate
 description: Audits OpenSpec specs and task plans before implementation when a change has explicit ACs, hidden requirement risk, external integrations, persistence, messaging, security, or async behavior.
 license: CC-BY-4.0
+adapted_from: tech-leads-club/agent-skills
 metadata:
   version: 1.0.0
 ---

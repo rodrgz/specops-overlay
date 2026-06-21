@@ -607,7 +607,7 @@ to version them.
 - Repository source files, templates, scripts, and general documentation are
   distributed under the MIT License in `LICENSE`.
 - Skill files declare their own license in front matter. Current workflow
-  skills use `CC-BY-4.0`.
+  skills use `CC-BY-4.0`. These skills and the underlying workflow are adapted from [agent-skills](https://github.com/tech-leads-club/agent-skills) by Tech Leads Club.
 - Keep license metadata current when adding or changing reusable skills.
 
 ## Contributing
