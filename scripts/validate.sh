@@ -115,6 +115,7 @@ run_adoption_case() {
 check_adoption_dry_run() {
     run_adoption_case "generic"
     run_adoption_case "java-quarkus"
+    run_adoption_case "node-typescript"
 }
 
 check_template_traceability() {

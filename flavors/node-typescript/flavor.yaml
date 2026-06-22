@@ -1,0 +1,59 @@
+id: node-typescript
+label: Node / TypeScript
+description: Node.js and TypeScript backend workflow flavor.
+
+defaults:
+  language: TypeScript
+  framework: Node.js
+  build_tools:
+    - npm
+    - pnpm
+    - yarn
+    - bun
+
+docs:
+  - docs/CODING-PATTERNS.md
+  - docs/INTEGRATION-PATTERNS.md
+  - docs/HARDENING-PATTERNS.md
+
+skills:
+  - skills/modular-architecture/SKILL.md
+
+paths:
+  source_roots:
+    - src
+    - app
+    - apps
+    - packages
+    - libs
+  test_roots:
+    - test
+    - tests
+    - __tests__
+  resource_roots:
+    - config
+    - configs
+    - public
+    - static
+
+commands:
+  npm:
+    dev: npm run dev
+    build: npm run build
+    test: npm test
+    verify: npm run lint
+  pnpm:
+    dev: pnpm dev
+    build: pnpm build
+    test: pnpm test
+    verify: pnpm lint
+  yarn:
+    dev: yarn dev
+    build: yarn build
+    test: yarn test
+    verify: yarn lint
+  bun:
+    dev: bun run dev
+    build: bun run build
+    test: bun test
+    verify: bun run lint

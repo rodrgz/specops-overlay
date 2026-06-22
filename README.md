@@ -165,6 +165,8 @@ files, and the first feature after adoption live in
 - `templates/`: reusable proposal, spec, design, task, AC proof, and
   evaluation templates.
 - `flavors/java-quarkus/`: optional Java/Quarkus guidance and stack defaults.
+- `flavors/node-typescript/`: optional Node/TypeScript guidance and stack
+  defaults.
 - `openspec/config.yaml`: OpenSpec context bridge for proposal, specs, design,
   and task artifacts.
 - `openspec/specs/` and `openspec/changes/`: placeholders for current behavior
@@ -177,13 +179,12 @@ directory. Generic adoption must work without assuming any language, framework,
 build tool, database, container runtime, or cloud provider.
 
 Stack-specific guidance belongs in optional flavors under `flavors/<id>/`.
-Java/Quarkus is the first supported flavor, not the identity of the overlay.
-When that flavor is selected, `flavors/java-quarkus/AGENTS.patch.md` is
-injected between the flavor markers in `AGENTS.md`.
+Java/Quarkus and Node/TypeScript are supported flavors, not the identity of the
+overlay. When a flavor is selected, its `AGENTS.patch.md` is injected between
+the flavor markers in `AGENTS.md`.
 
-The next flavor validation target is Node/TypeScript. OpenSpec schema packaging
-remains a future distribution option; the current strategy is copy-in adoption
-plus generated OpenSpec tool files.
+OpenSpec schema packaging remains a future distribution option; the current
+strategy is copy-in adoption plus generated OpenSpec tool files.
 
 ## OpenSpec Setup
 
