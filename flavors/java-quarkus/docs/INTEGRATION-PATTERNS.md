@@ -4,7 +4,7 @@ Patterns for external services, messaging, observability, resilience, and
 security in Java/Quarkus services.
 
 For package layout and module boundaries, load
-`flavors/java-quarkus/skills/modular-architecture/SKILL.md`.
+`openspec/specops/flavors/java-quarkus/skills/modular-architecture/SKILL.md`.
 
 ## External Client Encapsulation
 

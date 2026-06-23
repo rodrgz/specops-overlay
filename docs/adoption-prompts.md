@@ -1,10 +1,10 @@
 # Adoption Prompts
 
 Use these prompts when applying SpecOps Overlay to another repository. Keep the
-overlay at the repository root, not in a nested folder. In an adopting project,
-the root should contain `AGENTS.md`, `docs/`, `skills/`, `openspec/`, and any
-selected `flavors/` so agents and OpenSpec can discover the expected context
-paths.
+discoverable contract at the repository root, not in a nested folder. In an
+adopting project, the root should contain `AGENTS.md`, `docs/project/`,
+`openspec/`, and `.agents/skills/`. SpecOps templates and flavors live under
+`openspec/specops/`.
 
 Do not copy `.git/`. In brownfield repositories, do not overwrite the existing
 application `README.md`; keep the overlay README as source guidance and merge
@@ -16,8 +16,17 @@ Use this when the application or service does not exist yet. Create the real
 project first, then apply SpecOps Overlay at the project root.
 
 ```text
-You are in a new repository that has just adopted SpecOps Overlay as a
-root-level OpenSpec delivery overlay.
+You are an AI engineering assistant operating under SpecOps Overlay. SpecOps is a
+framework that adds quality gates, scope discipline, and strict requirement
+traceability to the OpenSpec standard.
+
+The overlay relies on these base paths. Always respect them:
+- `AGENTS.md`: Your primary binding contract and rules.
+- `docs/project/`: Stable project facts (Architecture, Stack, Conventions, etc).
+- `.agents/skills/`: Reusable agent workflows and quality gates.
+- `openspec/`: Observable behavior (`specs/`), proposed changes (`changes/`), and config.
+
+You are in a new repository that has just adopted this workflow.
 
 Goal: initialize the repository context for AI-assisted development before any
 feature work begins.
@@ -57,13 +66,23 @@ Use this when the application already exists. Apply SpecOps Overlay on a branch,
 then map the current code before asking agents to change behavior.
 
 ```text
-You are in an existing repository that has just adopted SpecOps Overlay as a
-root-level OpenSpec delivery overlay.
+You are an AI engineering assistant operating under SpecOps Overlay. SpecOps is a
+framework that adds quality gates, scope discipline, and strict requirement
+traceability to the OpenSpec standard.
+
+The overlay relies on these base paths. Always respect them:
+- `AGENTS.md`: Your primary binding contract and rules.
+- `docs/project/`: Stable project facts (Architecture, Stack, Conventions, etc).
+- `.agents/skills/`: Reusable agent workflows and quality gates.
+- `openspec/`: Observable behavior (`specs/`), proposed changes (`changes/`), and config.
+
+You are in an existing repository that has just adopted this workflow.
 
 Goal: perform brownfield mapping so agents can work from observed facts instead
-of assumptions.
+of assumptions or hallucinations. SpecOps requires strict adherence to project
+realities. Do not invent details.
 
-Use skills/brownfield-mapping/SKILL.md. Load AGENTS.md and the current
+Use `.agents/skills/brownfield-mapping/SKILL.md`. Load AGENTS.md and the current
 docs/project/*.md placeholders. Inspect README.md, build manifests, wrappers,
 Makefile or task runner files, CI files, container files, runtime config,
 source roots, test roots, migrations, scripts, and representative source files.
@@ -90,25 +109,30 @@ Use this when a repository already has `AGENTS.md`, `.claude/`,
 `.github/prompts/`, `openspec/`, or local AI instructions.
 
 ```text
+You are an AI engineering assistant operating under SpecOps Overlay. SpecOps is a
+framework that adds quality gates, scope discipline, and strict requirement
+traceability to the OpenSpec standard.
+
 You are in a repository that already had agent or OpenSpec files before
-SpecOps Overlay was introduced.
+this overlay was introduced.
 
 Goal: merge SpecOps Overlay without losing local rules.
 
-Compare the existing AGENTS.md, docs/project/*, skills/*, and openspec/config.yaml
-with the overlay structure. Preserve project-specific instructions, generated
-tool files, and existing workflow decisions unless they conflict with the
-overlay contract.
+Compare the existing AGENTS.md, docs/project/*, .agents/skills/*, openspec/*,
+and openspec/config.yaml with the overlay structure. Preserve project-specific
+instructions, generated tool files, and existing workflow decisions unless they
+conflict with the overlay contract.
 
 Normalize the repository toward these root-level paths:
 - AGENTS.md for the local agent contract.
 - docs/project/* for stable project facts.
-- skills/* for reusable agent quality gates.
+- .agents/skills/* for reusable agent quality gates.
 - openspec/config.yaml as the OpenSpec context bridge.
 - openspec/specs/* for current observable behavior.
 - openspec/changes/* for proposed behavior changes.
-- flavors/<id>/* for optional stack-specific guidance when the repository uses
+- openspec/specops/flavors/<id>/* for optional stack-specific guidance when the repository uses
   a supported flavor.
+- openspec/specops/templates/* for reusable SpecOps artifact templates.
 
 Do not copy this overlay README over the application README. Do not maintain
 generated .claude/ or .github/prompts/opsx-* files as overlay source unless
@@ -124,10 +148,17 @@ Use this only after `AGENTS.md` and `docs/project/*` contain enough real facts
 for agents to build, test, and reason about the project.
 
 ```text
-Use the adopted SpecOps Overlay workflow for this change.
+Act as a strict SpecOps engineer. SpecOps prioritizes evidence-based coding,
+smallest coherent scope, and AC-to-test traceability over quick-and-dirty fixes.
 
-Goal: plan and implement the requested feature using OpenSpec and the project
-reference docs.
+The overlay relies on these base paths. Always respect them:
+- `AGENTS.md`: Your primary binding contract and rules.
+- `docs/project/`: Stable project facts (Architecture, Stack, Conventions, etc).
+- `.agents/skills/`: Reusable agent workflows and quality gates.
+- `openspec/`: Observable behavior (`specs/`), proposed changes (`changes/`), and config.
+
+Goal: plan and implement the requested feature using the SpecOps workflow and
+the project reference docs.
 
 First load AGENTS.md, openspec/config.yaml, and only the docs/project files
 relevant to the change. If docs/project/* are still placeholders, stop feature
@@ -136,7 +167,7 @@ work and run the brownfield mapping prompt first.
 Create or update an OpenSpec change under openspec/changes/<change-name>/ for
 observable behavior changes. Load stack-specific flavor guidance only when the
 repository uses that flavor and the change touches that stack surface. Use
-skills/spec-quality-gate/SKILL.md before implementation when the change has
+`.agents/skills/spec-quality-gate/SKILL.md` before implementation when the change has
 explicit acceptance criteria, hidden requirement risk, integration,
 persistence, messaging, security, config, async, or webhook behavior.
 
@@ -145,7 +176,7 @@ e2e coverage according to docs/project/TESTING.md and the risk of the behavior.
 Map tests to acceptance criteria with AC-to-test traceability, including
 real-outcome proof for async or webhook behavior when relevant. Run the
 documented validation commands. If acceptance criteria are explicit, use
-skills/spec-driven-eval/SKILL.md before archive or merge.
+`.agents/skills/spec-driven-eval/SKILL.md` before archive or merge.
 
 End with changed files, validation results, risks, and any OpenSpec archive or
 sync command that should be run next.

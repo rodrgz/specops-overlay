@@ -41,10 +41,10 @@ Useful when available:
 6. Locate project docs:
    - Agent instructions: `AGENTS.md`
    - Project reference: `docs/project/*`
-   - Stack-specific patterns: `flavors/<id>/docs/*` when a flavor is active
+   - Stack-specific patterns: `openspec/specops/flavors/<id>/docs/*` when a flavor is active
    - Architecture docs: `docs/project/ARCHITECTURE.md` and selected flavor
      architecture skill, such as
-     `flavors/java-quarkus/skills/modular-architecture/SKILL.md`
+     `openspec/specops/flavors/java-quarkus/skills/modular-architecture/SKILL.md`
    - Test docs: `docs/project/TESTING.md`, `CONTRIBUTING.md`
    - Specs: `.specs/`, `specs/`, `docs/specs/`, markdown links in the PR body
 7. If the diff is very large, warn that confidence may be lower and review by

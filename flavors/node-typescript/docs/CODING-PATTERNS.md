@@ -5,7 +5,7 @@ when creating or changing handlers, controllers, resolvers, services,
 repositories, models, DTOs, validation, transactions, and tests.
 
 For module layout and boundary decisions, load
-`flavors/node-typescript/skills/modular-architecture/SKILL.md`.
+`openspec/specops/flavors/node-typescript/skills/modular-architecture/SKILL.md`.
 
 ## Handler, Controller, and Resolver Pattern
 

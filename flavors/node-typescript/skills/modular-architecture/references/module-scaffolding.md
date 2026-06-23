@@ -143,7 +143,7 @@ Use the lightest explicit boundary that fits:
 
 ## Stack-Specific Notes
 
-Load `flavors/node-typescript/docs/CODING-PATTERNS.md` when creating
+Load `openspec/specops/flavors/node-typescript/docs/CODING-PATTERNS.md` when creating
 controllers, resolvers, services, repositories, DTOs, transactions, or tests.
-Load `flavors/node-typescript/docs/INTEGRATION-PATTERNS.md` when the module
+Load `openspec/specops/flavors/node-typescript/docs/INTEGRATION-PATTERNS.md` when the module
 uses external clients, queues, events, webhooks, or observability hooks.

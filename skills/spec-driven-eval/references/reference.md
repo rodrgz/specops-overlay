@@ -1,7 +1,7 @@
 # Spec-Driven Evaluation Report Template
 
 This reference is the canonical report shape used by
-`skills/spec-driven-eval/SKILL.md`. `templates/evaluation.md` is the reusable
+`.agents/skills/spec-driven-eval/SKILL.md`. `openspec/specops/templates/evaluation.md` is the reusable
 project template for teams that want a checked-in starting point; keep both in
 sync when the report shape changes. Keep scores tied to evidence. In strict
 benchmark mode, fill the optional binary check tables.

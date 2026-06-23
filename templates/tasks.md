@@ -33,7 +33,7 @@ run, migration verification, or final evaluation.
 | `docs` | Markdown, templates, guidance, or examples | Link/reference check, markdown lint, or documented structural review. |
 | `security` | Secrets, auth, privacy, dependency, or config-sensitive changes | Secret scan, security review, or documented operational proof. |
 | `OpenSpec verify` | Proposal, spec, design, task, sync, or archive changes | `/opsx:verify` when available, otherwise equivalent OpenSpec structural review. |
-| `evaluation` | Post-implementation scoring against ACs | `skills/spec-driven-eval/SKILL.md` when acceptance criteria are scoreable. |
+| `evaluation` | Post-implementation scoring against ACs | `.agents/skills/spec-driven-eval/SKILL.md` when acceptance criteria are scoreable. |
 
 ## RED/GREEN Execution Rules
 
@@ -56,7 +56,7 @@ run, migration verification, or final evaluation.
   endpoint`, `fix(auth): preserve tenant boundary`, `docs(tasks): add proof
   mapping`.
 - Before archive or merge, run `/opsx:verify` when available, then run
-  `skills/spec-driven-eval/SKILL.md` when ACs are clear enough to score. If
+  `.agents/skills/spec-driven-eval/SKILL.md` when ACs are clear enough to score. If
   `/opsx:verify` is unavailable, record that status and run `openspec validate
   <change-id>` or equivalent generated structural review.
 - Do not archive until specs are synced or explicitly archive-ready, evaluation
@@ -78,13 +78,13 @@ run, migration verification, or final evaluation.
 - [ ] T-002 Confirm selected flavor guidance is required or not required.
   Priority: P0
   Maps to: planning
-  Files: `flavors/<id>/` or n/a
+  Files: `openspec/specops/flavors/<id>/` or n/a
   Tests: documentation proof
   Gate: quick
   Done when: selected flavor use is recorded with rationale.
   Commit: n/a
 
-- [ ] T-003 Run `skills/spec-quality-gate/SKILL.md` when ACs or hidden-risk
+- [ ] T-003 Run `.agents/skills/spec-quality-gate/SKILL.md` when ACs or hidden-risk
   proof are required.
   Priority: P0
   Maps to: planning gate
@@ -137,7 +137,7 @@ run, migration verification, or final evaluation.
   structural review are recorded.
   Commit: n/a
 
-- [ ] T-022 Run `skills/spec-driven-eval/SKILL.md` when acceptance criteria are
+- [ ] T-022 Run `.agents/skills/spec-driven-eval/SKILL.md` when acceptance criteria are
   clear enough to score.
   Priority: P0
   Maps to: evaluation gate

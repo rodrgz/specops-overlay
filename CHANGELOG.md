@@ -8,6 +8,12 @@ adoption scripts, validation, and documented workflow behavior.
 
 ## Unreleased
 
+- Simplified adoption output mapping: the overlay source keeps flat
+  `skills/`, `templates/`, and `flavors/` directories, while `scripts/adopt.sh`
+  installs them into `.agents/skills/` and `openspec/specops/` in adopting
+  repositories.
+- Simplified `scripts/adopt.sh` into a non-interactive bootstrapper with
+  optional `--flavor` injection and `--force` backups.
 - Added local and CI validation entry points for overlay self-checks.
 - Added OpenSpec capability mapping, task-local proof, quality-gate,
   evaluation, and archive-readiness guidance under the

@@ -12,15 +12,15 @@ project, or intentionally follows Node/TypeScript backend conventions.
 
 ### Stack-Specific Context
 
-- Use `flavors/node-typescript/docs/CODING-PATTERNS.md` for handlers,
+- Use `openspec/specops/flavors/node-typescript/docs/CODING-PATTERNS.md` for handlers,
   controllers, resolvers, services, repositories, DTOs, validation,
   transactions, entities/models, and tests.
-- Use `flavors/node-typescript/docs/INTEGRATION-PATTERNS.md` for dependency
+- Use `openspec/specops/flavors/node-typescript/docs/INTEGRATION-PATTERNS.md` for dependency
   injection, external clients, configuration, events, queues, observability,
   resilience, webhooks, and security.
-- Use `flavors/node-typescript/docs/HARDENING-PATTERNS.md` for package-manager
+- Use `openspec/specops/flavors/node-typescript/docs/HARDENING-PATTERNS.md` for package-manager
   scripts, typecheck, ESLint, Prettier, Jest or Vitest, e2e tests, dependency
   scanning, secret scanning, and CI gates.
-- Use `flavors/node-typescript/skills/modular-architecture/SKILL.md` before
+- Use `openspec/specops/flavors/node-typescript/skills/modular-architecture/SKILL.md` before
   designing or changing modules, boundaries, facades, repositories, persistence
   ownership, or subdomains in Node/TypeScript code.

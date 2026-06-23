@@ -4,7 +4,7 @@ Patterns for external services, messaging, observability, resilience, and
 security in Node.js and TypeScript backends.
 
 For package layout and module boundaries, load
-`flavors/node-typescript/skills/modular-architecture/SKILL.md`.
+`openspec/specops/flavors/node-typescript/skills/modular-architecture/SKILL.md`.
 
 ## External Client Encapsulation
 

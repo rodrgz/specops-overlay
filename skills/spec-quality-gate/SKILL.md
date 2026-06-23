@@ -37,8 +37,8 @@ Load the smallest useful set:
    - `references/test-strategy.md`
    - `references/scope-discipline.md`
 5. Domain guidance from the selected flavor, such as
-   `flavors/java-quarkus/docs/CODING-PATTERNS.md` or
-   `flavors/java-quarkus/docs/INTEGRATION-PATTERNS.md`, only when the planned
+   `openspec/specops/flavors/java-quarkus/docs/CODING-PATTERNS.md` or
+   `openspec/specops/flavors/java-quarkus/docs/INTEGRATION-PATTERNS.md`, only when the planned
    change uses it.
 
 Do not load every skill or every project document by default.

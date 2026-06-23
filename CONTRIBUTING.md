@@ -5,9 +5,10 @@ stack-agnostic.
 
 ## Workflow
 
-1. Create or update an OpenSpec change under `openspec/changes/<change-id>/`
-   for user-visible workflow, template, skill, or documentation behavior.
-2. Update matching delta specs under
+1. Use an OpenSpec change under `openspec/changes/<change-id>/` only when the
+   work changes the overlay's documented workflow or behavior enough to need
+   proposal/spec traceability. Routine maintenance may use a direct diff.
+2. When an OpenSpec change is used, update matching delta specs under
    `openspec/changes/<change-id>/specs/<capability>/spec.md`.
 3. Keep generated tool files such as `.claude/` and
    `.github/prompts/opsx-*` out of overlay source.
@@ -23,8 +24,13 @@ stack-agnostic.
 ## Quality Bar
 
 - Map tasks and proof to ACs, sanctioned implicit risks, or engineering gates.
-- Keep stack-specific guidance in `flavors/<id>/`.
-- Keep reusable workflow behavior in `skills/` and `templates/`.
+- Keep stack-specific source guidance in `flavors/<id>/`.
+- Keep reusable agent skill source in `skills/`.
+- Keep reusable artifact template source in `templates/`.
+- Keep adoption output mapping in `scripts/adopt.sh`, not by moving source
+  directories into generated destination paths.
+- Use adopter-relative paths in all cross-references inside docs, skills,
+  templates, and config (see [Path Convention](README.md#path-convention)).
 - Do not commit secrets, local evidence dumps, or generated adoption outputs.
 - Prefer small, focused changes with clear validation evidence.
 

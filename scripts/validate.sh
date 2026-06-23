@@ -25,12 +25,17 @@ check_internal_references() {
         CONTRIBUTING.md
         CHANGELOG.md
         openspec/config.yaml
+        openspec/specs
+        openspec/changes
         templates/proposal.md
         templates/spec.md
         templates/design.md
         templates/tasks.md
         templates/ac-proof-matrix.md
         templates/evaluation.md
+        flavors/java-quarkus/flavor.yaml
+        flavors/node-typescript/flavor.yaml
+        skills/brownfield-mapping/SKILL.md
         skills/spec-quality-gate/SKILL.md
         skills/spec-quality-gate/references/implicit-requirements.md
         skills/spec-quality-gate/references/ac-proof-matrix.md
@@ -38,7 +43,9 @@ check_internal_references() {
         skills/spec-quality-gate/references/scope-discipline.md
         skills/spec-driven-eval/SKILL.md
         skills/spec-driven-eval/references/reference.md
+        skills/pr-review/SKILL.md
         scripts/adopt.sh
+        scripts/validate.sh
     )
 
     local path
@@ -66,6 +73,7 @@ check_shell() {
 run_adoption_case() {
     local flavor="$1"
     local tmp target log
+    local args=()
 
     info "Running adoption dry run in /tmp ($flavor)"
 
@@ -76,33 +84,45 @@ run_adoption_case() {
     mkdir -p "$target"
     git -C "$target" init -q
 
-    {
-        printf '%s\n' "$flavor"
-        printf 'Y\n'   # ready to adopt
-        local i
-        for i in $(seq 1 40); do
-            printf '\n'
-        done
-    } | (cd "$target" && "$ROOT/scripts/adopt.sh" >"$log")
+    if [[ "$flavor" != "generic" ]]; then
+        args=(--flavor "$flavor")
+    fi
+
+    if ! (cd "$target" && "$ROOT/scripts/adopt.sh" "${args[@]}" >"$log" 2>&1); then
+        sed -n '1,180p' "$log" >&2
+        rm -rf "$tmp"
+        fail "Adoption dry run failed ($flavor)"
+    fi
 
     local expected=(
         AGENTS.md
         docs/project/ARCHITECTURE.md
         docs/project/STACK.md
-        skills/spec-quality-gate/SKILL.md
+        .agents/skills/brownfield-mapping/SKILL.md
+        .agents/skills/spec-quality-gate/SKILL.md
+        .agents/skills/spec-driven-eval/SKILL.md
         openspec/config.yaml
-        templates/tasks.md
+        openspec/specs/.gitkeep
+        openspec/changes/.gitkeep
+        openspec/changes/archive/.gitkeep
+        openspec/specops/templates/tasks.md
+        openspec/specops/flavors/java-quarkus/flavor.yaml
+        openspec/specops/flavors/node-typescript/flavor.yaml
     )
 
     if [[ "$flavor" != "generic" ]]; then
-        expected+=("flavors/$flavor/flavor.yaml")
-        expected+=("flavors/$flavor/AGENTS.patch.md")
+        expected+=("openspec/specops/flavors/$flavor/AGENTS.patch.md")
+        grep -q "Stack Flavor:" "$target/AGENTS.md" || {
+            sed -n '1,180p' "$log" >&2
+            rm -rf "$tmp"
+            fail "Adoption dry run did not inject flavor guidance ($flavor)"
+        }
     fi
 
     local path
     for path in "${expected[@]}"; do
         [[ -e "$target/$path" ]] || {
-            sed -n '1,160p' "$log" >&2
+            sed -n '1,180p' "$log" >&2
             rm -rf "$tmp"
             fail "Adoption dry run did not create $path"
         }
@@ -121,22 +141,24 @@ check_adoption_dry_run() {
 check_template_traceability() {
     info "Checking template traceability and task discipline"
 
-    if grep -q '^## Tests And Proof$' "$ROOT/templates/tasks.md"; then
+    local templates="$ROOT/templates"
+
+    if grep -q '^## Tests And Proof$' "$templates/tasks.md"; then
         fail "templates/tasks.md contains deferred Tests And Proof block"
     fi
 
-    grep -q 'Tests:' "$ROOT/templates/tasks.md" ||
-        fail "templates/tasks.md does not include Tests fields"
-    grep -q 'Gate:' "$ROOT/templates/tasks.md" ||
-        fail "templates/tasks.md does not include Gate fields"
-    grep -q 'Done when:' "$ROOT/templates/tasks.md" ||
-        fail "templates/tasks.md does not include Done when fields"
-    grep -q 'Maps to:' "$ROOT/templates/tasks.md" ||
-        fail "templates/tasks.md does not include Maps to fields"
-    grep -q 'RED/GREEN' "$ROOT/templates/tasks.md" ||
-        fail "templates/tasks.md does not include RED/GREEN guidance"
-    grep -q 'New Capabilities' "$ROOT/templates/proposal.md" ||
-        fail "templates/proposal.md does not include capability sections"
+    grep -q 'Tests:' "$templates/tasks.md" ||
+        fail "tasks template does not include Tests fields"
+    grep -q 'Gate:' "$templates/tasks.md" ||
+        fail "tasks template does not include Gate fields"
+    grep -q 'Done when:' "$templates/tasks.md" ||
+        fail "tasks template does not include Done when fields"
+    grep -q 'Maps to:' "$templates/tasks.md" ||
+        fail "tasks template does not include Maps to fields"
+    grep -q 'RED/GREEN' "$templates/tasks.md" ||
+        fail "tasks template does not include RED/GREEN guidance"
+    grep -q 'New Capabilities' "$templates/proposal.md" ||
+        fail "proposal template does not include capability sections"
 
     rg -q 'REQ-[0-9]{3}-AC-[0-9]{3}' \
         "$ROOT/templates" "$ROOT/skills" "$ROOT/openspec" ||
@@ -193,11 +215,69 @@ check_openspec() {
     fi
 }
 
+check_path_convention() {
+    info "Checking adopter-relative path convention in docs and config"
+
+    # Documentation and config files use adopter-relative paths so they
+    # resolve correctly after adopt.sh copies them. These patterns catch
+    # source-relative backtick-quoted paths that should have been transformed.
+    #
+    # Exclude: scripts/ (reference source paths legitimately),
+    #          CONTRIBUTING.md (documents source layout),
+    #          README.md Repository Contents section (describes source layout),
+    #          this file, and non-text files.
+
+    local scan_files=(
+        "$ROOT/AGENTS.md"
+        "$ROOT/openspec/config.yaml"
+        "$ROOT/docs/adoption-prompts.md"
+        "$ROOT/docs/project"
+    )
+
+    local scan_dirs=(
+        "$ROOT/skills"
+        "$ROOT/templates"
+        "$ROOT/flavors"
+    )
+
+    local targets=()
+    local f
+    for f in "${scan_files[@]}"; do
+        [[ -e "$f" ]] && targets+=("$f")
+    done
+    for f in "${scan_dirs[@]}"; do
+        [[ -d "$f" ]] && targets+=("$f")
+    done
+
+    if ((${#targets[@]} == 0)); then
+        warn "No files to scan for path convention"
+        return
+    fi
+
+    # Match backtick-quoted source-relative paths that should be adopter-relative.
+    # Example bad: `skills/foo/SKILL.md`  (should be `.agents/skills/foo/SKILL.md`)
+    # Example bad: `templates/tasks.md`   (should be `openspec/specops/templates/tasks.md`)
+    # Example bad: `flavors/java-quarkus/docs/FOO.md` (should be `openspec/specops/flavors/...`)
+    #
+    # The pattern requires a slash after the keyword to avoid matching prose
+    # like "skills," or "templates." and only triggers inside backticks.
+    # Paths with angle-bracket placeholders like `flavors/<id>/` are generic
+    # prose references, not resolvable cross-references, and are excluded.
+    local pattern='`(skills/[^`<]+|templates/[^`<]+|flavors/[^`<]+)`'
+
+    if rg --pcre2 -n "$pattern" "${targets[@]}" 2>/dev/null; then
+        fail "Source-relative paths found in docs/config (should use adopter-relative paths; see README.md#path-convention)"
+    fi
+
+    pass "Adopter-relative path convention respected"
+}
+
 main() {
     check_internal_references
     check_shell
     check_adoption_dry_run
     check_template_traceability
+    check_path_convention
     check_secret_scan
     check_openspec
     pass "All available overlay validation checks passed"

@@ -4,7 +4,7 @@ Use this template after implementation when acceptance criteria are clear
 enough to score. Every non-zero score must cite file/line evidence.
 
 The canonical evaluator instructions and detailed rubric live in
-`skills/spec-driven-eval/references/reference.md`. This file is the reusable
+`.agents/skills/spec-driven-eval/references/reference.md`. This file is the reusable
 project template and should stay structurally aligned with that reference.
 
 ## 1. Metadata

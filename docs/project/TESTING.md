@@ -53,4 +53,4 @@ Use these gate names in `openspec/changes/<change-id>/tasks.md`:
 | `docs` | Markdown, templates, examples, or guidance | Markdown/link/reference check or structural review. |
 | `security` | Secrets, auth, privacy, dependency, or config-sensitive changes | Secret scan, security review, or documented operational proof. |
 | `OpenSpec verify` | Proposal, spec, design, task, sync, or archive changes | `/opsx:verify` when available, otherwise equivalent structural review. |
-| `evaluation` | Post-implementation AC scoring | `skills/spec-driven-eval/SKILL.md` report when applicable. |
+| `evaluation` | Post-implementation AC scoring | `.agents/skills/spec-driven-eval/SKILL.md` report when applicable. |

@@ -27,7 +27,7 @@ Required:
 Optional:
 
 - Refined `spec.md` with requirement IDs.
-- AC proof matrix from `skills/spec-quality-gate/references/ac-proof-matrix.md`.
+- AC proof matrix from `.agents/skills/spec-quality-gate/references/ac-proof-matrix.md`.
 - Linked issue/ticket content.
 - PR diff, branch diff, or uncommitted working tree.
 - Project docs and documented validation commands.

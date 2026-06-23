@@ -8,10 +8,9 @@ It is not a runnable application or service. An adopting repository must fill
 in its own runtime facts, commands, architecture, tests, integrations, and
 operational constraints before relying on agents for code changes.
 
-Tool-specific OpenSpec command and skill files are not versioned in this
-overlay. Generate them in each adopting repository with `openspec init` so the
-selected tools, workflow profile, and installed OpenSpec version decide the
-final files.
+Tool-specific OpenSpec command files are not versioned in this overlay.
+Generate them in each adopting repository with `openspec init` so the selected
+tools, workflow profile, and installed OpenSpec version decide the final files.
 
 ## Contents
 
@@ -20,6 +19,7 @@ final files.
 - [Adoption](#adoption)
 - [Repository Contents](#repository-contents)
 - [Core And Flavors](#core-and-flavors)
+- [Path Convention](#path-convention)
 - [OpenSpec Setup](#openspec-setup)
 - [Validation](#validation)
 - [Licensing](#licensing)
@@ -39,6 +39,10 @@ working contract around that lifecycle:
 - `skills/spec-driven-eval/` for post-implementation scoring with evidence;
 - optional stack flavors under `flavors/<id>/`.
 
+The source repository stays flat for maintenance. During adoption,
+`scripts/adopt.sh` installs each source directory to a conventional destination
+in the adopting repository (see [Path Convention](#path-convention) below).
+
 The overlay does not guarantee implementation quality by itself. It gives
 agents and reviewers a clearer contract for finding risks, proving acceptance
 criteria, and recording what was actually validated.
@@ -55,7 +59,7 @@ Use the parts that match the risk of the change:
 
 - New repository: adopt overlay, fill `AGENTS.md`, fill `docs/project/*`, run
   `openspec init`, then start the first change.
-- Existing repository: adopt overlay, run `skills/brownfield-mapping/SKILL.md`,
+- Existing repository: adopt overlay, run `.agents/skills/brownfield-mapping/SKILL.md`,
   fill project docs from evidence, then plan changes.
 - Small docs/template update: use a short change under `openspec/changes/`, map
   tasks to a docs gate, and run targeted validation.
@@ -96,7 +100,7 @@ copy overlay -> fill AGENTS.md -> fill docs/project/* -> choose flavor -> opensp
 2. Fill `AGENTS.md` under `Template Defaults / Fill After Adoption` with real
    project facts.
 3. Fill every file under `docs/project/` with project-specific information.
-4. For existing repositories, use `skills/brownfield-mapping/SKILL.md` to fill
+4. For existing repositories, use `.agents/skills/brownfield-mapping/SKILL.md` to fill
    `docs/project/*` from observed code, manifests, scripts, and CI before
    relying on agents for implementation work.
 5. Confirm `openspec/config.yaml` matches the repository's desired OpenSpec
@@ -104,7 +108,7 @@ copy overlay -> fill AGENTS.md -> fill docs/project/* -> choose flavor -> opensp
 6. Load flavor guidance only when the adopting repository actually uses that
    stack.
 7. Run `openspec init` and select the AI tools that should receive generated
-   OpenSpec commands and skills.
+   OpenSpec command files.
 8. Run `openspec config profile` and `openspec update` only when the project
    needs the expanded workflow commands.
 
@@ -113,35 +117,32 @@ using the overlay path:
 
 ```bash
 /path/to/specops-overlay/scripts/adopt.sh
+# or, when a stack flavor applies:
+/path/to/specops-overlay/scripts/adopt.sh --flavor node-typescript
 ```
 
 For manual copy from the adopting repository root:
 
 ```bash
 OVERLAY=/path/to/specops-overlay
-rsync -a \
-  "$OVERLAY"/AGENTS.md \
-  "$OVERLAY"/docs \
-  "$OVERLAY"/skills \
-  "$OVERLAY"/openspec \
-  "$OVERLAY"/templates \
-  "$OVERLAY"/flavors \
-  .
+cp -a "$OVERLAY"/AGENTS.md .
+mkdir -p docs openspec .agents
+cp -a "$OVERLAY"/docs/project docs/
+cp -a "$OVERLAY"/openspec/config.yaml openspec/
+mkdir -p openspec/specs openspec/changes/archive
+touch openspec/specs/.gitkeep openspec/changes/.gitkeep \
+  openspec/changes/archive/.gitkeep
+mkdir -p openspec/specops
+cp -a "$OVERLAY"/templates openspec/specops/
+cp -a "$OVERLAY"/flavors openspec/specops/
+cp -a "$OVERLAY"/skills .agents/
 ```
 
 For an existing repository, work on a branch and keep backups while merging:
 
 ```bash
 git checkout -b adopt-specops-overlay
-OVERLAY=/path/to/specops-overlay
-rsync -a --backup --suffix=.before-specops-overlay \
-  "$OVERLAY"/AGENTS.md \
-  "$OVERLAY"/docs \
-  "$OVERLAY"/skills \
-  "$OVERLAY"/openspec \
-  "$OVERLAY"/templates \
-  "$OVERLAY"/flavors \
-  .
+/path/to/specops-overlay/scripts/adopt.sh --force
 ```
 
 Do not copy `.git/`. In brownfield repositories, do not overwrite the existing
@@ -178,13 +179,45 @@ The repository root is the overlay core. Do not add or assume a nested `core/`
 directory. Generic adoption must work without assuming any language, framework,
 build tool, database, container runtime, or cloud provider.
 
-Stack-specific guidance belongs in optional flavors under `flavors/<id>/`.
-Java/Quarkus and Node/TypeScript are supported flavors, not the identity of the
-overlay. When a flavor is selected, its `AGENTS.patch.md` is injected between
-the flavor markers in `AGENTS.md`.
+Stack-specific guidance is maintained in optional source flavors under
+`flavors/<id>/`. Java/Quarkus and Node/TypeScript are supported flavors, not
+the identity of the overlay. When a flavor is selected, its `AGENTS.patch.md`
+is injected between the flavor markers in `AGENTS.md`, and the flavor assets
+are installed under `openspec/specops/flavors/<id>/` in the adopting
+repository.
 
 OpenSpec schema packaging remains a future distribution option; the current
 strategy is copy-in adoption plus generated OpenSpec tool files.
+
+## Path Convention
+
+The source repository keeps a flat layout for maintainability. `scripts/adopt.sh`
+maps each source directory to a conventional destination in the adopting
+repository:
+
+| Source (this repo) | Adopter destination | Purpose |
+| --- | --- | --- |
+| `skills/` | `.agents/skills/` | Agent quality-gate skills |
+| `templates/` | `openspec/specops/templates/` | Reusable artifact templates |
+| `flavors/` | `openspec/specops/flavors/` | Stack-specific guidance |
+| `AGENTS.md` | `AGENTS.md` | Agent contract (unchanged) |
+| `docs/project/` | `docs/project/` | Project reference docs (unchanged) |
+| `openspec/config.yaml` | `openspec/config.yaml` | OpenSpec context bridge (unchanged) |
+
+Cross-references inside documentation, skills, templates, and config use
+**adopter-relative paths** — the paths as they will appear after adoption.
+For example, a skill file in this repository at `skills/spec-quality-gate/SKILL.md`
+references `.agents/skills/spec-driven-eval/SKILL.md`, not
+`skills/spec-driven-eval/SKILL.md`. This is intentional: agents and developers
+consume these files in the adopting repository, where adopter-relative paths
+resolve correctly.
+
+This is a deliberate trade-off inspired by GNU Stow's principle that package
+contents should mirror the target layout. Unlike Stow, the overlay cannot use
+symlinks (adopting repositories are separate git repositories) and the source
+layout diverges from the target for maintainability. The mapping table above
+and `scripts/adopt.sh` are the single canonical sources for how source paths
+translate to adopter paths.
 
 ## OpenSpec Setup
 
@@ -250,8 +283,9 @@ CI runs the same script in `.github/workflows/validate.yml`.
 
 ## Contributing
 
-Use the contribution flow in `CONTRIBUTING.md`. User-visible changes should
-include an OpenSpec change, update affected specs/templates/skills, run
+Use the contribution flow in `CONTRIBUTING.md`. User-visible workflow changes
+should use OpenSpec when proposal/spec traceability is useful; routine overlay
+maintenance may use a direct diff. Update affected specs/templates/skills, run
 `scripts/validate.sh`, and record notable changes in `CHANGELOG.md`.
 
 The authoritative bootstrap checklist lives in `AGENTS.md`. Stable engineering

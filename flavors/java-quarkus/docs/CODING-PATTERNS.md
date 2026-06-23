@@ -5,7 +5,7 @@ creating or changing resources, services, repositories, entities, DTOs,
 validation, transactions, and tests.
 
 For module layout and boundary decisions, load
-`flavors/java-quarkus/skills/modular-architecture/SKILL.md`.
+`openspec/specops/flavors/java-quarkus/skills/modular-architecture/SKILL.md`.
 
 ## Resource Pattern
 
