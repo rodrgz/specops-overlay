@@ -54,8 +54,9 @@ Project description:
 - Build/test/static analysis commands:
 - Flavor guidance to load, if any:
 
-After the docs are coherent, check openspec/config.yaml for consistency with
-the adopted project. Do not implement product features yet. End with changed
+After the docs are coherent, update openspec/config.yaml context to describe
+the adopted repository and application stack instead of referencing the generic
+SpecOps overlay core. Do not implement product features yet. End with changed
 files, unresolved unknowns, and the exact next commands to run, including
 openspec init when OpenSpec tooling should be generated.
 ```
@@ -91,6 +92,8 @@ Update docs/project/STACK.md, ARCHITECTURE.md, STRUCTURE.md, CONVENTIONS.md,
 TESTING.md, INTEGRATIONS.md, and CONCERNS.md from evidence in the repository.
 Update AGENTS.md "Template Defaults / Fill After Adoption" only with stable,
 project-wide facts that agents must see before loading detailed docs.
+Update openspec/config.yaml context to describe the actual repository and
+application stack instead of referencing the generic SpecOps overlay core.
 
 Do not change application behavior. Do not add desired future architecture to
 brownfield docs. Keep unknowns explicit with the file, command, or person needed
@@ -122,6 +125,9 @@ Compare the existing AGENTS.md, docs/project/*, .agents/skills/*, openspec/*,
 and openspec/config.yaml with the overlay structure. Preserve project-specific
 instructions, generated tool files, and existing workflow decisions unless they
 conflict with the overlay contract.
+Update openspec/config.yaml context to describe the actual repository and
+application stack instead of referencing the generic SpecOps overlay core,
+while preserving existing workflow decisions that still apply.
 
 Normalize the repository toward these root-level paths:
 - AGENTS.md for the local agent contract.

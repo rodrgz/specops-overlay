@@ -56,8 +56,10 @@ parallel documentation tree.
    migration, CI, and operational concerns.
 10. Update `AGENTS.md` template defaults only with stable, project-wide facts
     that agents must see before loading detailed docs.
-11. Re-read all changed project docs for contradictions, missing commands, and
-    accidental aspirational language.
+11. Update `openspec/config.yaml` context to reflect the actual repository and
+    application stack instead of the generic overlay core.
+12. Re-read all changed project docs and `openspec/config.yaml` for
+    contradictions, missing commands, and accidental aspirational language.
 
 ## Knowledge Verification Chain
 
@@ -88,6 +90,7 @@ Write or update these files:
 | `docs/project/TESTING.md` | Build/test/static analysis commands, test layout, test naming, fixtures, profiles, local-service requirements, CI-only checks |
 | `docs/project/INTEGRATIONS.md` | Databases, external APIs, auth, messaging, cache, search, observability, credentials, local dependency startup, contracts |
 | `docs/project/CONCERNS.md` | Risks, constraints, tradeoffs, operational concerns, known local issues, rollout and migration concerns |
+| `openspec/config.yaml` | Context block updated to reflect the actual repository and application stack instead of referencing the generic SpecOps overlay core |
 
 ## Evidence Checklist
 

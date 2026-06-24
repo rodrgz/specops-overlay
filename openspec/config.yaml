@@ -109,11 +109,11 @@ rules:
   specs:
     - Capture externally observable behavior, requirements, and scenarios.
     - Do not use specs as a dumping ground for stack, architecture, or repository notes.
-    - Use `### Requirement: <name>` for every requirement.
+    - "Use `### Requirement: <name>` for every requirement."
     - Give requirements and acceptance criteria stable IDs or labels suitable for traceability.
     - Record priority when it affects implementation, rollout, or validation order.
     - Mark explicitly out-of-scope behavior when the source PRD includes roadmap or future-slice items.
-    - Use `#### Scenario: <name>` for every scenario.
+    - "Use `#### Scenario: <name>` for every scenario."
     - Include at least one scenario per requirement.
     - Use SHALL or MUST for normative requirements.
     - Prefer behavior-first language over implementation details such as class names, methods, tables, or framework specifics.
