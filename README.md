@@ -49,13 +49,45 @@ criteria, and recording what was actually validated.
 
 ## Workflow
 
-The full overlay path is:
+After a repository has adopted the overlay, the day-to-day change path is:
 
 ```text
-adopt -> map -> propose -> specs -> design -> quality-gate -> tasks -> apply -> verify -> eval -> sync/archive
+propose -> specs/design/tasks as needed -> spec-quality-gate -> apply -> verify/validate -> spec-driven-eval -> sync/archive
 ```
 
-Use the parts that match the risk of the change:
+`propose` opens or updates the OpenSpec change and turns the intent into
+proposal, delta spec, design, and task artifacts as needed. Run
+`spec-quality-gate` before implementation when the change has explicit
+acceptance criteria or risk around persistence, messaging, integrations,
+security, config, async work, scheduled work, or webhooks.
+
+### OpenSpec Actions And Overlay Skills
+
+Names in the workflow are either OpenSpec lifecycle actions or SpecOps Overlay
+agent skills:
+
+| Name | Owner | Kind | Day-to-day use |
+| --- | --- | --- | --- |
+| `propose` | OpenSpec | Lifecycle action / generated tool command | Start or update `openspec/changes/<change-id>/` from intent, PRD, issue, or prompt. |
+| `specs`, `design`, `tasks` | OpenSpec | Change artifacts | Record behavior deltas, design decisions, and implementation tasks. |
+| `spec-quality-gate` | SpecOps Overlay | Agent skill | Before implementation, audit ACs, hidden requirements, scope, and test strategy. |
+| `apply` | OpenSpec | Lifecycle action / generated tool command | Implement the planned change with the chosen agent/tool. |
+| `verify` / `validate` | OpenSpec | Structural validation | Check OpenSpec proposal/spec/design/task structure before merge or archive. |
+| `spec-driven-eval` | SpecOps Overlay | Agent skill | After implementation, score behavior and tests against ACs/specs before archive or merge. |
+| `sync` / `archive` | OpenSpec | Lifecycle action / generated tool command | Sync accepted behavior into current specs, then archive the completed change. |
+
+In this source repository, overlay skills live under `skills/<name>/SKILL.md`.
+After adoption, they are installed in the consuming repository under
+`.agents/skills/<name>/SKILL.md`. They are not native OpenSpec commands; they
+are agent workflows that read and strengthen OpenSpec artifacts.
+
+Adoption and brownfield mapping are setup work before this daily path:
+
+```text
+adopt overlay -> brownfield-mapping if existing -> openspec init/update -> first change
+```
+
+Then use the parts that match the risk of the change:
 
 - New repository: adopt overlay, fill `AGENTS.md`, fill `docs/project/*`, run
   `openspec init`, then start the first change.
