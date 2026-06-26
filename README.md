@@ -1,326 +1,269 @@
 # SpecOps Overlay
 
-SpecOps Overlay is a technology-agnostic delivery overlay for OpenSpec. It
-adds project context, scope discipline, task-time proof, and post-implementation
-evaluation around OpenSpec's proposal/spec/task/apply/sync/archive lifecycle.
+SpecOps Overlay is a small delivery layer for teams using OpenSpec with AI
+agents.
 
-It is not a runnable application or service. An adopting repository must fill
-in its own runtime facts, commands, architecture, tests, integrations, and
-operational constraints before relying on agents for code changes.
+OpenSpec gives you the change lifecycle. SpecOps Overlay adds the working
+contract around it: project context, scoped tasks, acceptance-criteria proof,
+quality gates, and evidence before archive.
 
-Tool-specific OpenSpec command files are not versioned in this overlay.
-Generate them in each adopting repository with `openspec init` so the selected
-tools, workflow profile, and installed OpenSpec version decide the final files.
+Use it when you want agent-assisted changes to stay understandable without
+turning every task into heavyweight process.
 
-## Contents
+This repository is not a runnable service. It is copied into an adopting
+project and then filled with that project's real stack, commands, architecture,
+tests, integrations, and constraints.
 
-- [What It Adds](#what-it-adds)
-- [Workflow](#workflow)
-- [Adoption](#adoption)
-- [Repository Contents](#repository-contents)
-- [Core And Flavors](#core-and-flavors)
-- [Path Convention](#path-convention)
-- [OpenSpec Setup](#openspec-setup)
-- [Validation](#validation)
-- [Licensing](#licensing)
-- [Contributing](#contributing)
+## What You Get
 
-## What It Adds
+- `AGENTS.md`: the local contract agents follow in the adopting repository.
+- `docs/project/*`: stable project facts for architecture, stack, structure,
+  conventions, testing, integrations, and risks.
+- `openspec/config.yaml`: OpenSpec context rules for proposals, specs, design,
+  and tasks.
+- `openspec/schemas/evidence-first/*`: an optional project-local OpenSpec
+  schema for stricter proof, tasks, and evaluation artifacts.
+- `.agents/skills/*`: focused agent workflows for brownfield mapping, quality
+  gates, implementation evaluation, and PR review.
+- `openspec/specops/templates/*`: reusable proposal, spec, design, task,
+  proof, and evaluation templates.
+- `openspec/specops/flavors/*`: optional stack guidance, currently including
+  Java/Quarkus and Node/TypeScript.
 
-OpenSpec owns the lifecycle and artifact structure. SpecOps Overlay adds the
-working contract around that lifecycle:
+The point is simple: requirements, tasks, tests, and evidence should point to
+each other.
 
-- `AGENTS.md` as the local agent contract;
-- `docs/project/*` as the stable source for architecture, stack, testing,
-  integrations, conventions, and concerns;
-- task-local proof fields for `Maps to`, `Tests`, `Gate`, and `Done when`;
-- AC-to-proof matrices that map requirements to implementation and validation;
-- `skills/spec-quality-gate/` for pre-implementation risk and test planning;
-- `skills/spec-driven-eval/` for post-implementation scoring with evidence;
-- optional stack flavors under `flavors/<id>/`.
+## Adopt It
 
-The source repository stays flat for maintenance. During adoption,
-`scripts/adopt.sh` installs each source directory to a conventional destination
-in the adopting repository (see [Path Convention](#path-convention) below).
-
-The overlay does not guarantee implementation quality by itself. It gives
-agents and reviewers a clearer contract for finding risks, proving acceptance
-criteria, and recording what was actually validated.
-
-## Workflow
-
-After a repository has adopted the overlay, the day-to-day change path is:
-
-```text
-propose -> specs/design/tasks as needed -> spec-quality-gate -> apply -> verify/validate -> spec-driven-eval -> sync/archive
-```
-
-`propose` opens or updates the OpenSpec change and turns the intent into
-proposal, delta spec, design, and task artifacts as needed. Run
-`spec-quality-gate` before implementation when the change has explicit
-acceptance criteria or risk around persistence, messaging, integrations,
-security, config, async work, scheduled work, or webhooks.
-
-### OpenSpec Actions And Overlay Skills
-
-Names in the workflow are either OpenSpec lifecycle actions or SpecOps Overlay
-agent skills:
-
-| Name | Owner | Kind | Day-to-day use |
-| --- | --- | --- | --- |
-| `propose` | OpenSpec | Lifecycle action / generated tool command | Start or update `openspec/changes/<change-id>/` from intent, PRD, issue, or prompt. |
-| `specs`, `design`, `tasks` | OpenSpec | Change artifacts | Record behavior deltas, design decisions, and implementation tasks. |
-| `spec-quality-gate` | SpecOps Overlay | Agent skill | Before implementation, audit ACs, hidden requirements, scope, and test strategy. |
-| `apply` | OpenSpec | Lifecycle action / generated tool command | Implement the planned change with the chosen agent/tool. |
-| `verify` / `validate` | OpenSpec | Structural validation | Check OpenSpec proposal/spec/design/task structure before merge or archive. |
-| `spec-driven-eval` | SpecOps Overlay | Agent skill | After implementation, score behavior and tests against ACs/specs before archive or merge. |
-| `sync` / `archive` | OpenSpec | Lifecycle action / generated tool command | Sync accepted behavior into current specs, then archive the completed change. |
-
-In this source repository, overlay skills live under `skills/<name>/SKILL.md`.
-After adoption, they are installed in the consuming repository under
-`.agents/skills/<name>/SKILL.md`. They are not native OpenSpec commands; they
-are agent workflows that read and strengthen OpenSpec artifacts.
-
-Adoption and brownfield mapping are setup work before this daily path:
-
-```text
-adopt overlay -> brownfield-mapping if existing -> openspec init/update -> first change
-```
-
-Then use the parts that match the risk of the change:
-
-- New repository: adopt overlay, fill `AGENTS.md`, fill `docs/project/*`, run
-  `openspec init`, then start the first change.
-- Existing repository: adopt overlay, run `.agents/skills/brownfield-mapping/SKILL.md`,
-  fill project docs from evidence, then plan changes.
-- Small docs/template update: use a short change under `openspec/changes/`, map
-  tasks to a docs gate, and run targeted validation.
-- Clear medium feature: create proposal/spec/task artifacts, run the quality
-  gate when ACs or risks apply, then implement.
-- Risky or AC-heavy behavior: use full proposal/spec/design/tasks, run
-  `spec-quality-gate`, implement task-local proof, then verify and evaluate.
-- Unclear requirement: use `/opsx:explore`, then create or update a change once
-  the smallest defensible scope is clear.
-
-OpenSpec commands remain actions, not rigid phases. SpecOps Overlay adds proof
-gates for teams that want stronger AI-assisted delivery controls. If a
-default-on gate is skipped, record the opt-out rationale in the change.
-
-### Change Sizing
-
-`AGENTS.md` is the canonical source for sizing rules copied into adopting
-repositories. The short version:
-
-- Small changes may use shorter artifacts, but keep traceability under
-  `openspec/changes/` when behavior or proof matters.
-- Medium changes need proposal/spec/task artifacts when behavior changes.
-- Large and complex changes need full proposal, specs, design, tasks, proof
-  planning, OpenSpec verification, and evaluation.
-- Risky surfaces trigger quality gates regardless of size: explicit ACs,
-  persistence, messaging, external integrations, security, config, async,
-  scheduled, or webhook behavior.
-
-## Adoption
-
-Use this flow once per adopting repository:
-
-```text
-copy overlay -> fill AGENTS.md -> fill docs/project/* -> choose flavor -> openspec init/update -> first change
-```
-
-1. Copy the overlay files into the adopting repository root.
-2. Fill `AGENTS.md` under `Template Defaults / Fill After Adoption` with real
-   project facts.
-3. Fill every file under `docs/project/` with project-specific information.
-4. For existing repositories, use `.agents/skills/brownfield-mapping/SKILL.md` to fill
-   `docs/project/*` from observed code, manifests, scripts, and CI before
-   relying on agents for implementation work.
-5. Confirm `openspec/config.yaml` matches the repository's desired OpenSpec
-   workflow and context rules.
-6. Load flavor guidance only when the adopting repository actually uses that
-   stack.
-7. Run `openspec init` and select the AI tools that should receive generated
-   OpenSpec command files.
-8. Run `openspec config profile` and `openspec update` only when the project
-   needs the expanded workflow commands.
-
-For guided setup, run the adoption script from the adopting repository root by
-using the overlay path:
+Run the adoption script from the root of the project that will receive the
+overlay:
 
 ```bash
 /path/to/specops-overlay/scripts/adopt.sh
-# or, when a stack flavor applies:
-/path/to/specops-overlay/scripts/adopt.sh --flavor node-typescript
 ```
 
-For manual copy from the adopting repository root:
+Use a stack flavor only when it matches the project:
 
 ```bash
-OVERLAY=/path/to/specops-overlay
-cp -a "$OVERLAY"/AGENTS.md .
-mkdir -p docs openspec .agents
-cp -a "$OVERLAY"/docs/project docs/
-cp -a "$OVERLAY"/openspec/config.yaml openspec/
-mkdir -p openspec/specs openspec/changes/archive
-touch openspec/specs/.gitkeep openspec/changes/.gitkeep \
-  openspec/changes/archive/.gitkeep
-mkdir -p openspec/specops
-cp -a "$OVERLAY"/templates openspec/specops/
-cp -a "$OVERLAY"/flavors openspec/specops/
-cp -a "$OVERLAY"/skills .agents/
+/path/to/specops-overlay/scripts/adopt.sh --flavor node-typescript
+/path/to/specops-overlay/scripts/adopt.sh --flavor java-quarkus
 ```
 
-For an existing repository, work on a branch and keep backups while merging:
+Keep the lightweight OpenSpec workflow unless the repository needs stricter
+AC-to-proof traceability. To opt into the native evidence-first schema, use:
+
+```bash
+/path/to/specops-overlay/scripts/adopt.sh --schema evidence-first
+```
+
+The schema option does not require a stack flavor. It installs
+`openspec/schemas/evidence-first/` and sets `openspec/config.yaml` to
+`schema: evidence-first` in the adopting repository.
+
+For an existing project, work on a branch and let the script back up paths it
+needs to replace:
 
 ```bash
 git checkout -b adopt-specops-overlay
 /path/to/specops-overlay/scripts/adopt.sh --force
 ```
 
-Do not copy `.git/`. In brownfield repositories, do not overwrite the existing
-application `README.md`; keep this overlay README as source guidance and merge
-only the adoption instructions the project wants to keep.
+Then do the minimum setup that makes the overlay useful:
 
-Long-form AI prompts for new repositories, brownfield mapping, existing agent
-files, and the first feature after adoption live in
-[`docs/adoption-prompts.md`](docs/adoption-prompts.md).
+1. Fill `AGENTS.md` with the real project defaults.
+2. Fill `docs/project/*` with observed project facts.
+3. In brownfield projects, use `.agents/skills/brownfield-mapping/SKILL.md`
+   before trusting the docs for implementation work.
+4. Run `openspec init` in the adopting project to generate tool-specific
+   OpenSpec commands.
+5. Run `openspec config profile` and `openspec update` only if the project
+   wants the expanded OPSX command set.
 
-## Repository Contents
+Generated tool files such as `.claude/` and `.github/prompts/opsx-*` belong to
+the adopting project, not to this overlay source.
 
-- `AGENTS.md`: local contract for agents working in an adopting repository.
-- `docs/project/`: project facts that must be filled after adoption.
-- `docs/adoption-prompts.md`: reusable prompts for applying the overlay.
-- `skills/brownfield-mapping/`: evidence-based mapping for existing projects.
-- `skills/spec-quality-gate/`: pre-implementation quality gate for ACs, hidden
-  requirements, scope, and test strategy.
-- `skills/spec-driven-eval/`: post-implementation scoring with evidence.
-- `skills/pr-review/`: focused PR or diff review workflow.
-- `templates/`: reusable proposal, spec, design, task, AC proof, and
-  evaluation templates.
-- `flavors/java-quarkus/`: optional Java/Quarkus guidance and stack defaults.
-- `flavors/node-typescript/`: optional Node/TypeScript guidance and stack
-  defaults.
-- `openspec/config.yaml`: OpenSpec context bridge for proposal, specs, design,
-  and task artifacts.
-- `openspec/specs/` and `openspec/changes/`: placeholders for current behavior
-  specs and proposed change artifacts.
+## OpenSpec Workflow
 
-## Core And Flavors
-
-The repository root is the overlay core. Do not add or assume a nested `core/`
-directory. Generic adoption must work without assuming any language, framework,
-build tool, database, container runtime, or cloud provider.
-
-Stack-specific guidance is maintained in optional source flavors under
-`flavors/<id>/`. Java/Quarkus and Node/TypeScript are supported flavors, not
-the identity of the overlay. When a flavor is selected, its `AGENTS.patch.md`
-is injected between the flavor markers in `AGENTS.md`, and the flavor assets
-are installed under `openspec/specops/flavors/<id>/` in the adopting
-repository.
-
-OpenSpec schema packaging remains a future distribution option; the current
-strategy is copy-in adoption plus generated OpenSpec tool files.
-
-## Path Convention
-
-The source repository keeps a flat layout for maintainability. `scripts/adopt.sh`
-maps each source directory to a conventional destination in the adopting
-repository:
-
-| Source (this repo) | Adopter destination | Purpose |
-| --- | --- | --- |
-| `skills/` | `.agents/skills/` | Agent quality-gate skills |
-| `templates/` | `openspec/specops/templates/` | Reusable artifact templates |
-| `flavors/` | `openspec/specops/flavors/` | Stack-specific guidance |
-| `AGENTS.md` | `AGENTS.md` | Agent contract (unchanged) |
-| `docs/project/` | `docs/project/` | Project reference docs (unchanged) |
-| `openspec/config.yaml` | `openspec/config.yaml` | OpenSpec context bridge (unchanged) |
-
-Cross-references inside documentation, skills, templates, and config use
-**adopter-relative paths** — the paths as they will appear after adoption.
-For example, a skill file in this repository at `skills/spec-quality-gate/SKILL.md`
-references `.agents/skills/spec-driven-eval/SKILL.md`, not
-`skills/spec-driven-eval/SKILL.md`. This is intentional: agents and developers
-consume these files in the adopting repository, where adopter-relative paths
-resolve correctly.
-
-This is a deliberate trade-off inspired by GNU Stow's principle that package
-contents should mirror the target layout. Unlike Stow, the overlay cannot use
-symlinks (adopting repositories are separate git repositories) and the source
-layout diverges from the target for maintainability. The mapping table above
-and `scripts/adopt.sh` are the single canonical sources for how source paths
-translate to adopter paths.
-
-## OpenSpec Setup
-
-Install OpenSpec, then initialize tool integrations from the root of the
-adopting project:
-
-```bash
-npm install -g @fission-ai/openspec@latest
-openspec init
-```
-
-The default `core` profile provides the shortest workflow:
+Use the lightest workflow that still preserves traceability.
 
 ```text
-propose -> apply -> sync -> archive
+intent
+  -> openspec change
+  -> proposal / specs / design / tasks as needed
+  -> spec-quality-gate when ACs or risk justify it
+  -> apply the implementation
+  -> verify or validate the OpenSpec change
+  -> spec-driven-eval when behavior can be scored
+  -> sync and archive
 ```
 
-The expanded profile adds explicit design, task, verification, onboarding, and
-bulk archive commands:
+In practice:
 
-```bash
-openspec config profile
-openspec update
+- Small docs or template cleanup can stay small. Use a direct diff or a short
+  change note when no behavior proof is needed.
+- Behavior changes should live under `openspec/changes/<change-id>/`.
+- Explicit acceptance criteria, persistence, messaging, integrations, security,
+  config, async work, scheduled work, and webhooks should trigger
+  `spec-quality-gate` before implementation.
+- Completed behavior should be verified, evaluated when scoreable, synced into
+  current specs, and archived with known gaps named.
+
+OpenSpec owns the lifecycle. SpecOps Overlay keeps the work honest around that
+lifecycle.
+
+### Lightweight Versus Evidence-First
+
+Use the default lightweight workflow for low-risk maintenance, early discovery,
+small docs/template updates, and changes where proposal/spec/task traceability
+is enough.
+
+Use `evidence-first` when a repository or change needs stricter
+AC-to-proof-to-task-to-test traceability. The schema keeps the OpenSpec
+proposal, specs, design, tasks, apply, and archive lifecycle, and adds native
+`proof.md` and `evaluation.md` artifacts.
+
+OpenSpec CLI command changes are out of scope for this overlay. The schema uses
+project-local OpenSpec schema support rather than adding new upstream commands.
+
+## Applied Project Map
+
+After adoption, a consuming repository should look roughly like this:
+
+```text
+your-project/
+|-- AGENTS.md
+|-- docs/
+|   `-- project/
+|       |-- ARCHITECTURE.md
+|       |-- STACK.md
+|       |-- STRUCTURE.md
+|       |-- CONVENTIONS.md
+|       |-- TESTING.md
+|       |-- INTEGRATIONS.md
+|       `-- CONCERNS.md
+|-- openspec/
+|   |-- config.yaml
+|   |-- schemas/
+|   |   `-- evidence-first/     # only when selected
+|   |-- specs/
+|   |   `-- <capability>/spec.md
+|   |-- changes/
+|   |   |-- <change-id>/
+|   |   |   |-- proposal.md
+|   |   |   |-- design.md
+|   |   |   |-- tasks.md
+|   |   |   `-- specs/<capability>/spec.md
+|   |   `-- archive/
+|   `-- specops/
+|       |-- templates/
+|       `-- flavors/
+|           |-- java-quarkus/
+|           `-- node-typescript/
+`-- .agents/
+    `-- skills/
+        |-- brownfield-mapping/
+        |-- spec-quality-gate/
+        |-- spec-driven-eval/
+        `-- pr-review/
 ```
 
-For scripted setup, pass supported tool IDs explicitly:
+This source repository stays flatter for maintenance:
 
-```bash
-openspec init --tools claude,github-copilot
+```text
+skills/     -> .agents/skills/
+templates/  -> openspec/specops/templates/
+flavors/    -> openspec/specops/flavors/
+AGENTS.md   -> AGENTS.md
+docs/project/ -> docs/project/
+openspec/config.yaml -> openspec/config.yaml
 ```
 
-Generated tool files such as `.claude/` and `.github/prompts/opsx-*` should
-remain local to the adopting repository unless that team intentionally chooses
-to version them.
+## Source Repository
 
-## Validation
+The overlay core is stack-agnostic. Do not add a nested `core/` directory and
+do not make generic adoption depend on a language, framework, database,
+container runtime, or cloud provider.
 
-Run the overlay's self-validation before merging changes to templates, skills,
-OpenSpec config, or adoption scripts:
+Reusable workflow guidance belongs here:
+
+- `skills/`: source for agent quality gates.
+- `templates/`: source for lightweight reusable OpenSpec artifacts and
+  transitional material copied to `openspec/specops/templates/` during generic
+  adoption. These templates do not own strict `evidence-first` schema behavior.
+- `openspec/schemas/evidence-first/`: source for the optional native
+  evidence-first schema and its schema-owned templates. This is the canonical
+  strict lifecycle source for `evidence-first` proposal, spec, design, proof,
+  task, and evaluation artifacts. Select it with `--schema evidence-first`.
+- `flavors/<id>/`: optional stack-specific guidance.
+- `docs/project/`: adopter-facing placeholders copied into adopting
+  repositories. These are not overlay-source facts; they remain
+  fill-after-adoption templates.
+- `docs/adoption-prompts.md`: prompts for greenfield, brownfield, and first
+  feature setup.
+- `docs/openspec-evidence-workflow-design.md`: rationale and upstream-alignment
+  notes for the evidence-oriented workflow.
+
+Adopter-facing references should use the paths they will have after adoption,
+such as `.agents/skills/spec-quality-gate/SKILL.md`, not the source-only
+`skills/spec-quality-gate/SKILL.md` path.
+
+### Where to Edit
+
+Use this table to find the canonical source path for common workflow changes.
+
+| What You Are Changing | Canonical Source Path | Role |
+| --- | --- | --- |
+| Evidence-first proposal template | `openspec/schemas/evidence-first/templates/proposal.md` | Strict schema-owned |
+| Evidence-first spec template | `openspec/schemas/evidence-first/templates/spec.md` | Strict schema-owned |
+| Evidence-first design template | `openspec/schemas/evidence-first/templates/design.md` | Strict schema-owned |
+| Evidence-first proof template | `openspec/schemas/evidence-first/templates/proof.md` | Strict schema-owned |
+| Evidence-first tasks template | `openspec/schemas/evidence-first/templates/tasks.md` | Strict schema-owned |
+| Evidence-first evaluation template | `openspec/schemas/evidence-first/templates/evaluation.md` | Strict schema-owned |
+| Evidence-first schema definition | `openspec/schemas/evidence-first/schema.yaml` | Strict schema-owned |
+| Lightweight/default proposal template | `templates/proposal.md` | Lightweight reusable |
+| Lightweight/default spec template | `templates/spec.md` | Lightweight reusable |
+| Lightweight/default design template | `templates/design.md` | Lightweight reusable |
+| Lightweight/default tasks template | `templates/tasks.md` | Lightweight reusable |
+| Lightweight/default AC proof matrix | `templates/ac-proof-matrix.md` | Lightweight reusable |
+| Lightweight/default evaluation template | `templates/evaluation.md` | Transitional reusable |
+| Agent quality gate skills | `skills/<skill-name>/SKILL.md` | Skill source |
+| Stack flavor guidance | `flavors/<id>/` | Optional flavor source |
+| Adoption script and mapping | `scripts/adopt.sh` | Adoption tooling |
+| Repository validation | `scripts/validate.sh` | Validation tooling |
+| OpenSpec config and context rules | `openspec/config.yaml` | OpenSpec config |
+| Adopter project-reference templates | `docs/project/*` | Adopter templates |
+
+**Strict schema-owned** templates are the canonical lifecycle source for the
+`evidence-first` schema. Select them with `--schema evidence-first`.
+
+**Lightweight reusable** templates are default adoption material copied to
+`openspec/specops/templates/`. They do not own strict `evidence-first` schema
+behavior.
+
+**Transitional reusable** templates exist in both surfaces. Their content may
+overlap with schema-owned templates during transition; a future change can
+consolidate or remove them.
+
+## Validate Changes
+
+Before merging changes to scripts, templates, skills, OpenSpec config, or
+workflow docs, run:
 
 ```bash
 scripts/validate.sh
 ```
 
-The script checks required internal references, parses shell scripts, runs
-`shellcheck` when installed, performs generic and selected-flavor adoption dry
-runs in `/tmp`, checks task/proposal template traceability, scans tracked files
-for obvious secret patterns, and validates active OpenSpec changes when
-OpenSpec is installed.
+The validation script checks required references, shell scripts, generic and
+evidence-first adoption dry runs, template traceability, obvious secret
+patterns, active OpenSpec changes, and evidence-first schema/template
+resolution when OpenSpec is available.
 
-CI runs the same script in `.github/workflows/validate.yml`.
+## License
 
-## Licensing
-
-- Repository source files, templates, scripts, and general documentation are
-  distributed under the MIT License in `LICENSE`.
+- Repository source, templates, scripts, and general documentation use the MIT
+  License in `LICENSE`.
 - Skill files declare their own license in front matter. Current workflow
   skills use `CC-BY-4.0`.
-- These skills and the underlying workflow are adapted from
+- The skills and workflow are adapted from
   [agent-skills](https://github.com/tech-leads-club/agent-skills) by Tech Leads
   Club.
-- Keep license metadata current when adding or changing reusable skills.
-
-## Contributing
-
-Use the contribution flow in `CONTRIBUTING.md`. User-visible workflow changes
-should use OpenSpec when proposal/spec traceability is useful; routine overlay
-maintenance may use a direct diff. Update affected specs/templates/skills, run
-`scripts/validate.sh`, and record notable changes in `CHANGELOG.md`.
-
-The authoritative bootstrap checklist lives in `AGENTS.md`. Stable engineering
-facts should remain in `docs/project/`; observable behavior belongs in
-`openspec/specs/`; proposed behavior changes belong under
-`openspec/changes/<change-id>/`.

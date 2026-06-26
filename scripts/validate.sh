@@ -33,6 +33,13 @@ check_internal_references() {
         templates/tasks.md
         templates/ac-proof-matrix.md
         templates/evaluation.md
+        openspec/schemas/evidence-first/schema.yaml
+        openspec/schemas/evidence-first/templates/proposal.md
+        openspec/schemas/evidence-first/templates/spec.md
+        openspec/schemas/evidence-first/templates/design.md
+        openspec/schemas/evidence-first/templates/proof.md
+        openspec/schemas/evidence-first/templates/tasks.md
+        openspec/schemas/evidence-first/templates/evaluation.md
         flavors/java-quarkus/flavor.yaml
         flavors/node-typescript/flavor.yaml
         skills/brownfield-mapping/SKILL.md
@@ -72,10 +79,16 @@ check_shell() {
 
 run_adoption_case() {
     local flavor="$1"
+    local schema="${2:-}"
     local tmp target log
     local args=()
+    local label="$flavor"
 
-    info "Running adoption dry run in /tmp ($flavor)"
+    if [[ -n "$schema" ]]; then
+        label="$label, schema=$schema"
+    fi
+
+    info "Running adoption dry run in /tmp ($label)"
 
     tmp="$(mktemp -d /tmp/specops-overlay-validate.XXXXXX)"
     target="$tmp/target"
@@ -87,11 +100,14 @@ run_adoption_case() {
     if [[ "$flavor" != "generic" ]]; then
         args=(--flavor "$flavor")
     fi
+    if [[ -n "$schema" ]]; then
+        args+=(--schema "$schema")
+    fi
 
     if ! (cd "$target" && "$ROOT/scripts/adopt.sh" "${args[@]}" >"$log" 2>&1); then
         sed -n '1,180p' "$log" >&2
         rm -rf "$tmp"
-        fail "Adoption dry run failed ($flavor)"
+        fail "Adoption dry run failed ($label)"
     fi
 
     local expected=(
@@ -115,7 +131,31 @@ run_adoption_case() {
         grep -q "Stack Flavor:" "$target/AGENTS.md" || {
             sed -n '1,180p' "$log" >&2
             rm -rf "$tmp"
-            fail "Adoption dry run did not inject flavor guidance ($flavor)"
+            fail "Adoption dry run did not inject flavor guidance ($label)"
+        }
+    fi
+
+    if [[ "$schema" == "evidence-first" ]]; then
+        expected+=(
+            openspec/schemas/evidence-first/schema.yaml
+            openspec/schemas/evidence-first/templates/proof.md
+            openspec/schemas/evidence-first/templates/evaluation.md
+        )
+        grep -q '^schema: evidence-first$' "$target/openspec/config.yaml" || {
+            sed -n '1,180p' "$log" >&2
+            rm -rf "$tmp"
+            fail "Adoption dry run did not configure evidence-first schema"
+        }
+    else
+        [[ ! -e "$target/openspec/schemas/evidence-first" ]] || {
+            sed -n '1,180p' "$log" >&2
+            rm -rf "$tmp"
+            fail "Generic adoption installed optional evidence-first schema"
+        }
+        grep -q '^schema: spec-driven$' "$target/openspec/config.yaml" || {
+            sed -n '1,180p' "$log" >&2
+            rm -rf "$tmp"
+            fail "Generic adoption did not keep spec-driven schema"
         }
     fi
 
@@ -129,13 +169,33 @@ run_adoption_case() {
     done
 
     rm -rf "$tmp"
-    pass "Adoption dry run created expected files ($flavor)"
+    pass "Adoption dry run created expected files ($label)"
 }
 
 check_adoption_dry_run() {
     run_adoption_case "generic"
     run_adoption_case "java-quarkus"
     run_adoption_case "node-typescript"
+    run_adoption_case "generic" "evidence-first"
+}
+
+check_evidence_first_schema() {
+    info "Checking evidence-first OpenSpec schema"
+
+    if command -v openspec >/dev/null 2>&1; then
+        (cd "$ROOT" && openspec schemas --json | rg -q '"name": "evidence-first"') ||
+            fail "OpenSpec did not discover evidence-first schema"
+        (cd "$ROOT" && openspec schemas --json | rg -q '"source": "project"') ||
+            fail "OpenSpec did not report project-local schema source"
+        (cd "$ROOT" && openspec schema validate evidence-first)
+        (cd "$ROOT" && openspec templates --schema evidence-first --json | rg -q '"proof"') ||
+            fail "OpenSpec did not resolve evidence-first proof template"
+        (cd "$ROOT" && openspec templates --schema evidence-first --json | rg -q '"evaluation"') ||
+            fail "OpenSpec did not resolve evidence-first evaluation template"
+        pass "Evidence-first schema validation passed"
+    else
+        warn "openspec not installed; evidence-first schema validation unavailable"
+    fi
 }
 
 check_template_traceability() {
@@ -215,6 +275,42 @@ check_openspec() {
     fi
 }
 
+check_template_governance() {
+    info "Checking template source governance"
+
+    # REQ-003-AC-001: Required evidence-first schema templates must exist.
+    local required_schema_templates=(
+        openspec/schemas/evidence-first/templates/proposal.md
+        openspec/schemas/evidence-first/templates/spec.md
+        openspec/schemas/evidence-first/templates/design.md
+        openspec/schemas/evidence-first/templates/proof.md
+        openspec/schemas/evidence-first/templates/tasks.md
+        openspec/schemas/evidence-first/templates/evaluation.md
+    )
+
+    local tmpl
+    for tmpl in "${required_schema_templates[@]}"; do
+        [[ -e "$ROOT/$tmpl" ]] ||
+            fail "Missing required evidence-first schema template: $tmpl"
+    done
+    pass "Required evidence-first schema templates exist"
+
+    # REQ-003-AC-002: README and CONTRIBUTING must contain canonical ownership guidance.
+    grep -q 'Where to Edit' "$ROOT/README.md" ||
+        fail "README.md missing canonical template ownership guidance (expected 'Where to Edit' section)"
+    grep -q 'Strict schema-owned' "$ROOT/README.md" ||
+        fail "README.md missing schema-owned template classification"
+    grep -q 'Lightweight reusable' "$ROOT/README.md" ||
+        fail "README.md missing lightweight reusable template classification"
+
+    grep -q 'Edit Routing' "$ROOT/CONTRIBUTING.md" ||
+        fail "CONTRIBUTING.md missing edit-routing guidance (expected 'Edit Routing' section)"
+    grep -q 'openspec/schemas/evidence-first/templates/' "$ROOT/CONTRIBUTING.md" ||
+        fail "CONTRIBUTING.md missing schema template path in edit-routing guidance"
+
+    pass "Canonical template ownership guidance present in docs"
+}
+
 check_path_convention() {
     info "Checking adopter-relative path convention in docs and config"
 
@@ -266,7 +362,7 @@ check_path_convention() {
     local pattern='`(skills/[^`<]+|templates/[^`<]+|flavors/[^`<]+)`'
 
     if rg --pcre2 -n "$pattern" "${targets[@]}" 2>/dev/null; then
-        fail "Source-relative paths found in docs/config (should use adopter-relative paths; see README.md#path-convention)"
+        fail "Source-relative paths found in docs/config (should use adopter-relative paths; see README.md#applied-project-map)"
     fi
 
     pass "Adopter-relative path convention respected"
@@ -276,7 +372,9 @@ main() {
     check_internal_references
     check_shell
     check_adoption_dry_run
+    check_evidence_first_schema
     check_template_traceability
+    check_template_governance
     check_path_convention
     check_secret_scan
     check_openspec

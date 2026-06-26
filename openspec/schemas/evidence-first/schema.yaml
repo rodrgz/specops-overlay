@@ -1,0 +1,124 @@
+name: evidence-first
+version: 1
+description: Evidence-first OpenSpec workflow - proposal -> specs -> design -> proof -> tasks -> evaluation
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Initial proposal with capability mapping, scope, risks, and quality-gate decision
+    template: proposal.md
+    instruction: |
+      Create the proposal document that establishes WHY this change is needed
+      and which observable capabilities it affects.
+
+      Sections:
+      - **Why**: 1-2 concise paragraphs on the problem, opportunity, or source request.
+      - **What Changes**: Specific behavior, workflow, template, script, or documentation changes. Mark breaking changes with **BREAKING**.
+      - **Capabilities**: New, modified, and removed capabilities. Inspect `openspec/specs/` before naming delta specs.
+      - **Impact**: Affected areas, risk level, stack/flavor relevance, quality-gate decision, and out-of-scope behavior.
+
+      Keep implementation details in design.md. Keep observable requirements in specs.
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: Delta specifications with stable requirement and acceptance-criterion IDs
+    template: spec.md
+    instruction: |
+      Create specification files that define WHAT the system or workflow must do.
+
+      Create one spec file per capability listed in the proposal. Use stable IDs
+      for requirements and acceptance criteria, such as `REQ-001` and
+      `REQ-001-AC-001`, so proof, tasks, tests, and evaluation can trace back
+      to the spec.
+
+      Delta operations:
+      - **ADDED Requirements**: New capabilities.
+      - **MODIFIED Requirements**: Changed behavior; include the full updated requirement.
+      - **REMOVED Requirements**: Deprecated behavior; include **Reason** and **Migration**.
+      - **RENAMED Requirements**: Name changes only; use FROM:/TO: format.
+
+      Every requirement must use SHALL or MUST language and include at least one
+      `#### Scenario:` block.
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: Technical design decisions, assumptions, risks, and rollback notes
+    template: design.md
+    instruction: |
+      Create the design document that explains HOW to implement the change.
+
+      Include design.md when the change has cross-cutting behavior, new
+      structure, architecture decisions, validation complexity, or ambiguity
+      that must be resolved before tasks. Record decisions, alternatives,
+      risks, migration or rollback, and open questions.
+
+      Resolve ambiguous AC interpretation here or mark it blocked before proof
+      and tasks are created.
+    requires:
+      - proposal
+
+  - id: proof
+    generates: proof.md
+    description: Pre-implementation AC interpretation, scope decisions, planned proof, and quality-gate result
+    template: proof.md
+    instruction: |
+      Create proof.md before implementation to freeze how the change will be
+      proven.
+
+      Capture:
+      - AC interpretation and assumptions.
+      - In-scope, out-of-scope, and unknown implicit requirements.
+      - Planned implementation proof for each AC.
+      - Planned unit, integration/e2e, and real-outcome test proof where relevant.
+      - Gate result: pass, partial, fail, skipped, or blocked, with rationale.
+
+      Do not let tasks proceed with unknown P0/P1 acceptance criteria unless
+      the unknown is explicitly deferred or blocked.
+    requires:
+      - specs
+      - design
+
+  - id: tasks
+    generates: tasks.md
+    description: Implementation checklist with AC, proof, test, and gate mapping
+    template: tasks.md
+    instruction: |
+      Create the task list that breaks implementation into verifiable work.
+
+      Each actionable item must be a checkbox using `- [ ]`. Each
+      implementation task must include task-local `Maps to`, `Tests`, `Gate`,
+      and `Done when` fields. Map every planned file, endpoint, job, event,
+      config entry, test, and documentation change to an AC, sanctioned
+      implicit risk, or engineering gate.
+
+      Order tasks by dependency and keep them small enough to verify
+      independently.
+    requires:
+      - specs
+      - design
+      - proof
+
+  - id: evaluation
+    generates: evaluation.md
+    description: Post-implementation scoring with implementation evidence, test evidence, validation gates, gaps, and archive readiness
+    template: evaluation.md
+    instruction: |
+      Create evaluation.md after implementation and before archive when
+      acceptance criteria are clear enough to score.
+
+      Record file/line implementation evidence, test evidence, validation gate
+      results, unresolved gaps, and archive readiness. Treat unavailable or
+      unrun gates as unavailable or not-run, not passing.
+    requires:
+      - tasks
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    Read context files, proof.md, and tasks.md before applying.
+    Work through pending tasks, mark each checkbox complete as soon as it is
+    done, and pause if AC interpretation, scope, or validation evidence is
+    unclear.

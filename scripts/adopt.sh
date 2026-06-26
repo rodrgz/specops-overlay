@@ -4,7 +4,7 @@
 # Run from the root of the repository that is adopting this overlay.
 #
 # Usage:
-#   /path/to/specops-overlay/scripts/adopt.sh [--flavor <id>] [--force]
+#   /path/to/specops-overlay/scripts/adopt.sh [--flavor <id>] [--schema evidence-first] [--force]
 
 set -euo pipefail
 
@@ -25,16 +25,18 @@ error() { printf "${RED}x${RESET} %s\n" "$*" >&2; }
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") [--flavor <id>] [--force]
+Usage: $(basename "$0") [--flavor <id>] [--schema <name>] [--force]
 
 Options:
   --flavor <id>  Inject stack flavor guidance from flavors/<id>.
+  --schema <name> Install an optional OpenSpec schema. Supported: evidence-first.
   --force        Back up existing destination paths before overwriting them.
   -h, --help     Show this help.
 EOF
 }
 
 SELECTED_FLAVOR=""
+SELECTED_SCHEMA=""
 FORCE=false
 COPY_SOURCES=()
 COPY_DESTS=()
@@ -52,6 +54,18 @@ while (($# > 0)); do
             ;;
         --flavor=*)
             SELECTED_FLAVOR="${1#--flavor=}"
+            shift
+            ;;
+        --schema)
+            [[ $# -ge 2 ]] || {
+                error "--schema requires a value"
+                exit 2
+            }
+            SELECTED_SCHEMA="$2"
+            shift 2
+            ;;
+        --schema=*)
+            SELECTED_SCHEMA="${1#--schema=}"
             shift
             ;;
         --force)
@@ -203,6 +217,31 @@ apply_agents_flavor() {
     mv "$temp_file" "$agents_file"
 }
 
+apply_openspec_schema() {
+    local config_file="$1" schema_name="$2" temp_file
+
+    [[ -n "$schema_name" ]] || return 0
+
+    temp_file="$(mktemp "$TARGET/.openspec-config.XXXXXX")"
+
+    awk -v schema="$schema_name" '
+        BEGIN { replaced = 0 }
+        /^schema:/ && replaced == 0 {
+            print "schema: " schema
+            replaced = 1
+            next
+        }
+        { print }
+        END {
+            if (replaced == 0) {
+                print "schema: " schema
+            }
+        }
+    ' "$config_file" > "$temp_file"
+
+    mv "$temp_file" "$config_file"
+}
+
 OVERLAY_REAL="$(cd "$OVERLAY_ROOT" && pwd -P)"
 TARGET_REAL="$(cd "$TARGET" && pwd -P)"
 
@@ -221,6 +260,16 @@ require_source "skills"
 require_source "openspec/config.yaml"
 require_source "templates"
 require_source "flavors"
+
+if [[ -n "$SELECTED_SCHEMA" && "$SELECTED_SCHEMA" != "evidence-first" ]]; then
+    error "Unsupported schema: $SELECTED_SCHEMA"
+    error "Supported schema: evidence-first"
+    exit 2
+fi
+
+if [[ "$SELECTED_SCHEMA" == "evidence-first" ]]; then
+    require_source "openspec/schemas/evidence-first"
+fi
 
 if [[ -n "$SELECTED_FLAVOR" ]]; then
     require_source "flavors/$SELECTED_FLAVOR/flavor.yaml"
@@ -241,6 +290,9 @@ register_copy "skills" ".agents/skills"
 register_copy "openspec/config.yaml" "openspec/config.yaml"
 register_copy "templates" "openspec/specops/templates"
 register_copy "flavors" "openspec/specops/flavors"
+if [[ "$SELECTED_SCHEMA" == "evidence-first" ]]; then
+    register_copy "openspec/schemas/evidence-first" "openspec/schemas/evidence-first"
+fi
 register_dir "openspec/specs"
 register_dir "openspec/changes"
 register_dir "openspec/changes/archive"
@@ -255,6 +307,13 @@ if [[ -n "$SELECTED_FLAVOR" ]]; then
     success "Injected flavor guidance: $SELECTED_FLAVOR."
 else
     success "Generic adoption selected; no flavor guidance injected."
+fi
+
+if [[ "$SELECTED_SCHEMA" == "evidence-first" ]]; then
+    apply_openspec_schema "$TARGET/openspec/config.yaml" "$SELECTED_SCHEMA"
+    success "Installed OpenSpec schema: $SELECTED_SCHEMA."
+else
+    success "Lightweight OpenSpec schema selected; no optional schema installed."
 fi
 
 success "SpecOps Overlay adopted successfully."

@@ -8,6 +8,13 @@ adoption scripts, validation, and documented workflow behavior.
 
 ## Unreleased
 
+- Added an optional project-local OpenSpec schema, `evidence-first`, with
+  proposal, spec, design, proof, task, and evaluation templates for stricter
+  AC-to-proof traceability.
+- Added `scripts/adopt.sh --schema evidence-first` so adopting repositories can
+  opt into the native evidence-first schema without selecting a stack flavor.
+- Extended `scripts/validate.sh` to cover evidence-first schema validation,
+  template resolution, and opt-in adoption dry runs when OpenSpec is available.
 - Simplified adoption output mapping: the overlay source keeps flat
   `skills/`, `templates/`, and `flavors/` directories, while `scripts/adopt.sh`
   installs them into `.agents/skills/` and `openspec/specops/` in adopting

@@ -6,6 +6,12 @@ adopting project, the root should contain `AGENTS.md`, `docs/project/`,
 `openspec/`, and `.agents/skills/`. SpecOps templates and flavors live under
 `openspec/specops/`.
 
+Use the default lightweight OpenSpec workflow unless the repository explicitly
+needs stricter AC-to-proof-to-task-to-test traceability. Choose the
+`evidence-first` schema only for teams or changes that need that stronger proof
+contract. Upstream OpenSpec CLI command changes are out of scope for this
+overlay; evidence-first uses project-local schema support.
+
 Do not copy `.git/`. In brownfield repositories, do not overwrite the existing
 application `README.md`; keep the overlay README as source guidance and merge
 only the adoption instructions that the project wants to keep.
@@ -25,6 +31,8 @@ The overlay relies on these base paths. Always respect them:
 - `docs/project/`: Stable project facts (Architecture, Stack, Conventions, etc).
 - `.agents/skills/`: Reusable agent workflows and quality gates.
 - `openspec/`: Observable behavior (`specs/`), proposed changes (`changes/`), and config.
+- Optional schema: use `openspec/schemas/evidence-first/` only when stricter
+  AC-to-proof traceability is selected.
 
 You are in a new repository that has just adopted this workflow.
 
@@ -53,6 +61,7 @@ Project description:
 - Local dev command:
 - Build/test/static analysis commands:
 - Flavor guidance to load, if any:
+- OpenSpec schema: `spec-driven` by default, or `evidence-first` only when stricter proof is required:
 
 After the docs are coherent, update openspec/config.yaml context to describe
 the adopted repository and application stack instead of referencing the generic
@@ -76,6 +85,8 @@ The overlay relies on these base paths. Always respect them:
 - `docs/project/`: Stable project facts (Architecture, Stack, Conventions, etc).
 - `.agents/skills/`: Reusable agent workflows and quality gates.
 - `openspec/`: Observable behavior (`specs/`), proposed changes (`changes/`), and config.
+- Optional schema: `openspec/schemas/evidence-first/` only when stricter
+  AC-to-proof traceability was selected during adoption.
 
 You are in an existing repository that has just adopted this workflow.
 
@@ -134,6 +145,8 @@ Normalize the repository toward these root-level paths:
 - docs/project/* for stable project facts.
 - .agents/skills/* for reusable agent quality gates.
 - openspec/config.yaml as the OpenSpec context bridge.
+- openspec/schemas/evidence-first/* only when the project has opted into the
+  evidence-first schema.
 - openspec/specs/* for current observable behavior.
 - openspec/changes/* for proposed behavior changes.
 - openspec/specops/flavors/<id>/* for optional stack-specific guidance when the repository uses
@@ -176,6 +189,9 @@ repository uses that flavor and the change touches that stack surface. Use
 `.agents/skills/spec-quality-gate/SKILL.md` before implementation when the change has
 explicit acceptance criteria, hidden requirement risk, integration,
 persistence, messaging, security, config, async, or webhook behavior.
+If openspec/config.yaml selects `evidence-first`, create and maintain proof and
+evaluation artifacts through the schema. If it keeps the lightweight default,
+do not invent evidence-first artifacts unless the repository explicitly opts in.
 
 Implement the change in the smallest coherent scope. Add unit, integration, or
 e2e coverage according to docs/project/TESTING.md and the risk of the behavior.
