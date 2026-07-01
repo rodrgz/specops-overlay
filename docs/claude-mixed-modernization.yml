@@ -1,0 +1,193 @@
+name: Claude mixed modernization
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "What Claude should do"
+        required: true
+        type: choice
+        options:
+          - discovery
+          - brief-to-spec
+          - implement-approved-spec
+          - validate-pr
+      system:
+        description: "Legacy system dir under legacy/"
+        required: false
+      target_stack:
+        description: "Target stack, for example java-spring or dotnet-8"
+        required: false
+      feature:
+        description: ".specs feature name"
+        required: false
+
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+    paths:
+      - ".specs/**"
+      - "analysis/**"
+      - "modernized/**"
+      - "src/**"
+      - "test/**"
+
+concurrency:
+  group: claude-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: read
+
+jobs:
+  claude-chatops:
+    if: >
+      (github.event_name == 'issue_comment' ||
+       github.event_name == 'pull_request_review_comment') &&
+      contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          plugin_marketplaces: |
+            https://github.com/anthropics/claude-code.git
+          plugins: |
+            code-modernization@claude-plugins-official
+          claude_args: |
+            --max-turns 8
+            --append-system-prompt "Use code-modernization for legacy discovery and tlc-spec-driven for spec/task/validation work. Do not edit legacy/."
+
+  modernization-discovery:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'discovery'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          plugin_marketplaces: |
+            https://github.com/anthropics/claude-code.git
+          plugins: |
+            code-modernization@claude-plugins-official
+          prompt: |
+            Run the modernization discovery flow for legacy/${{ inputs.system }}.
+
+            Use code-modernization only for discovery:
+            1. /modernize-preflight ${{ inputs.system }} ${{ inputs.target_stack }}
+            2. /modernize-assess ${{ inputs.system }}
+            3. /modernize-map ${{ inputs.system }}
+            4. /modernize-extract-rules ${{ inputs.system }}
+            5. /modernize-brief ${{ inputs.system }} ${{ inputs.target_stack }}
+
+            Constraints:
+            - Never edit legacy/.
+            - Write only under analysis/${{ inputs.system }}/.
+            - Mask secrets.
+            - Stop after MODERNIZATION_BRIEF.md is produced.
+          claude_args: |
+            --max-turns 20
+
+  brief-to-spec:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'brief-to-spec'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            /tlc-spec-driven
+
+            Convert the approved modernization brief into a spec-driven feature.
+
+            Inputs:
+            - analysis/${{ inputs.system }}/MODERNIZATION_BRIEF.md
+            - analysis/${{ inputs.system }}/BUSINESS_RULES.md
+            - analysis/${{ inputs.system }}/topology.json
+
+            Output:
+            - .specs/features/${{ inputs.feature }}/spec.md
+            - .specs/features/${{ inputs.feature }}/design.md if needed
+            - .specs/features/${{ inputs.feature }}/tasks.md if needed
+
+            Map P0 Rule Cards to acceptance criteria.
+            Do not implement code in this job.
+          claude_args: |
+            --max-turns 14
+
+  implement-approved-spec:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'implement-approved-spec'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: claude-write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            /tlc-spec-driven
+
+            Execute the approved feature:
+            .specs/features/${{ inputs.feature }}/
+
+            Use analysis/${{ inputs.system }}/ artifacts as legacy evidence.
+            Follow tlc-spec-driven Execute:
+            - one atomic task at a time
+            - tests derived from spec acceptance criteria
+            - gate must pass before task is done
+            - one commit per task
+            - after last task, run validation/verifier flow
+            - never edit legacy/
+          claude_args: |
+            --max-turns 30
+
+  validate-pr:
+    if: >
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'workflow_dispatch' && inputs.mode == 'validate-pr')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            /tlc-spec-driven
+
+            Validate this PR against the relevant .specs feature.
+
+            Do not modify source code.
+            Check:
+            - spec acceptance criteria coverage
+            - tests assert spec-defined outcomes
+            - no shallow tests
+            - no unrelated scope creep
+            - validation report exists or should be produced
+
+            Comment with PASS/FAIL and ranked gaps.
+          claude_args: |
+            --max-turns 10
